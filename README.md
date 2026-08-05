@@ -23,7 +23,6 @@ pip install pykosis
 ```
 
 이 패키지는 KOSIS API 키가 필요합니다. <https://kosis.kr/openapi/>에서 무료로 발급받으세요.
-
 발급하신 키를 넣는 방법은 다음과 같습니다.
 
 **방법 1 — 코드에서 직접 넣기** (바로 한 번 써볼 때)
@@ -79,8 +78,10 @@ pd.DataFrame(life_table)   # 또는 polars.DataFrame(life_table)
 KOSIS는 통계를 **기관(`org_id`)** 과 **통계표(`tbl_id`)** 로 식별합니다. 코드를 모르면
 `search`(키워드)나 `fetch_list`(분류 트리)로 찾습니다.
 
-**`search` — 키워드로 찾기.** 키워드가 든 표가 **순위대로 여러 개** 나옵니다. 맨 위가 꼭 원하는
-표는 아니니, 표 이름(`tbl_nm`)을 보고 원하는 `org_id`·`tbl_id`를 고릅니다.
+#### 3.1.1 `search` — 키워드로 찾기
+
+키워드가 든 표가 **순위대로 여러 개** 나옵니다. 맨 위가 꼭 원하는 표는 아니니, 표 이름
+(`tbl_nm`)을 보고 원하는 `org_id`·`tbl_id`를 고릅니다.
 
 ```python
 hits = kosis.search("생명")   # '생명'이 든 표를 순위대로 (여러 개)
@@ -95,19 +96,25 @@ hits = kosis.search("생명")   # '생명'이 든 표를 순위대로 (여러 �
 - 각 행에는 분류 경로(`full_path_id`, 예: `"F > F_29"`)도 담겨 있어 분류를 구분할 수 있습니다.
 - 키워드를 좁히면(`kosis.search("완전생명표")`) 원하는 표가 상위에 바로 뜹니다.
 
-고른 `org_id`·`tbl_id`는 `fetch_data`(§3.2)에 넘겨 데이터를 가져옵니다.
+고른 `org_id`·`tbl_id`는 [`fetch_data`(§3.2)](#32-fetch_data--통계자료-가져오기)에 넘겨 데이터를
+가져옵니다.
 
-**`fetch_list` — 분류 트리로 찾기.** 코드를 모르고 분류부터 훑고 싶을 때, 트리를 한 단계씩
-내려갑니다.
+#### 3.1.2 `fetch_list` — 분류 트리로 찾기
+
+코드를 모르고 분류부터 훑고 싶을 때, 트리를 한 단계씩 내려갑니다.
 
 ```python
 kosis.fetch_list(view_code="MT_ZTITLE")                         # 최상위 분류 (주제별)
 kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # 그 아래 목록 (F_29 = 생명표)
 ```
 
-`view_code`는 통계표를 분류하는 12가지 뷰 중 하나입니다. Service View Code(`"MT_ZTITLE"`)는
-함수에서만 되고, 짧은 이름(`"subject"`)은 함수·CLI·스킬 어디서나 됩니다 — 함수는 둘 다 받고,
-`kosis` 명령과 플러그인 스킬은 짧은 이름만 씁니다(`--view subject`).
+#### 3.1.3 `view_code` — 12가지 분류 뷰
+
+`fetch_list`의 `view_code`는 아래 12가지 뷰 중 하나입니다. KOSIS **코드**(`"MT_ZTITLE"`)는
+외우기 어려우니, 알기 쉬운 **대체명**(`"subject"`)으로도 쓸 수 있습니다.
+
+- **함수** `view_code=` — 코드든 대체명이든 받습니다.
+- **`kosis` 명령·플러그인 스킬** — 대체명만 받습니다(`--view subject`).
 
 | Service View Code | Service View Name | Function/CLI/SKILL |
 |---|---|---|
@@ -167,7 +174,7 @@ pivot_items(data, label="itm_id")     # 항목코드로
 
 - `fetch_explanation`은 통계조사 설명(목적·법적근거·주기·용어)을 줍니다.
 - `fetch_meta`는 통계표 정보를 줍니다. `meta_type`으로 골라 봅니다 — `TBL`(표명)·`ORG`(기관)·
-  `PRD`(수록기간)·`ITM`(항목·분류)·`CMMT`(주석). 코드(`"ITM"`)도 짧은 이름(`"item"`)도 됩니다.
+  `PRD`(수록기간)·`ITM`(항목·분류)·`CMMT`(주석). 코드(`"ITM"`)도 대체명(`"item"`)도 됩니다.
 
 ```python
 kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")             # 완전생명표(101/DT_1B42) 조사 설명
