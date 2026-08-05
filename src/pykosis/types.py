@@ -121,6 +121,8 @@ class SearchRow(TypedDict, total=False):
     stat_id: str
     stat_nm: str
     vw_cd: str
+    mt_atitle: str      # classification path, human-readable
+    full_path_id: str   # classification path ids (e.g. "F > F_29")
     contents: str
     strt_prd_de: str  # earliest recorded period
     end_prd_de: str   # latest recorded period
