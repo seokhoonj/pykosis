@@ -9,12 +9,12 @@
 
 통계청 국가통계포털 **KOSIS**의 국가통계를 읽어옵니다.
 
-KOSIS는 인구·경제·물가·고용·주거·보건·교육·산업 등 거의 모든 분야의 승인통계를 제공합니다.
-pykosis는 KOSIS Open API의 6개 서비스를 감싸, 통계표를 검색하고 통계자료를 가져와 항목을 열로
-펼쳐 분석에 씁니다.
+인구와 가구, 노동과 임금, 소득·소비·자산, 물가와 국민계정, 금융과 무역·국제수지, 보건과 복지,
+교육, 주거와 국토, 농림·수산, 광공업과 건설, 교통·물류, 정보통신, 과학·기술, 환경·에너지,
+지역통계까지 다룹니다.
 
-자주 쓰는 **KOSIS 100대 지표**는 통계표 코드 없이 `kosis.population.total_fertility_rate`처럼
-이름으로도 바로 꺼냅니다(아래 절 참고).
+자주 쓰는 지표는 `kosis.population.total_fertility_rate` 같은 **접근자**로 바로 꺼내고, 그 밖의
+통계는 통계표 코드로 조회합니다.
 
 ## 1. 설치
 
@@ -22,9 +22,28 @@ pykosis는 KOSIS Open API의 6개 서비스를 감싸, 통계표를 검색하고
 pip install pykosis
 ```
 
-무료 API 키는 <https://kosis.kr/openapi/>에서 발급받습니다. 키는 `KOSIS(api_key="...")`,
-환경변수 `KOSIS_API_KEY`, `~/.config/pykosis/credentials.json` 파일 순으로 찾습니다. R `kosis`
-패키지와 이름이 같아 `.Renviron`에 넣어둔 키도 그대로 잡힙니다.
+무료 API 키는 <https://kosis.kr/openapi/>에서 발급받으세요. 키를 넣는 방법은 두 가지입니다.
+
+**방법 1 — 코드에서 직접 넣기** (바로 한 번 써볼 때)
+
+```python
+from pykosis import KOSIS
+
+kosis = KOSIS(api_key="발급받은-키")
+```
+
+**방법 2 — 파일에 저장해서 계속 쓰기** (권장 — 한 번 저장하면 매번 안 넣어도 됩니다)
+
+`~/.config/pykosis/credentials.json` 파일을 만들고 아래를 넣으세요.
+
+```json
+{ "KOSIS_API_KEY": "발급받은-키" }
+```
+
+그러면 이후로는 인자 없이 `KOSIS()`만 써도 이 키를 자동으로 찾습니다.
+
+> 환경변수를 선호하면, macOS·Linux는 터미널에서 `export KOSIS_API_KEY="발급받은-키"`,
+> Windows는 PowerShell에서 `setx KOSIS_API_KEY "발급받은-키"`.
 
 ## 2. 예제
 
@@ -153,8 +172,8 @@ kosis.fetch_indicator("160")   # 지표번호 160 = 합계출산율 (개념·산
 
 ## 4. 큐레이션 지표 (100대 지표)
 
-통계표 코드를 외우지 않고, **KOSIS 100대 지표**를 `kosis.그룹.지표.fetch()`로 바로 꺼냅니다.
-편집기에서 `kosis.` 뒤를 점(`.`)으로 타고 들어가면 자동완성으로 찾을 수 있습니다.
+통계표 코드를 외우지 않고, **KOSIS 100대 지표**를 `kosis.그룹.지표.fetch()` 접근자로 바로
+꺼냅니다. 편집기에서 `kosis.` 뒤를 점(`.`)으로 타고 들어가면 자동완성으로 찾을 수 있습니다.
 
 ```python
 kosis.population.total_fertility_rate.fetch()   # 합계출산율
@@ -419,9 +438,10 @@ kosis indicator 160                           # 주요지표 설명
 
 ## 6. AI 코딩 에이전트에서 사용
 
-이 저장소는 Claude Code·Codex용 플러그인 마켓플레이스도 겸합니다 —
-`search`·`list`·`data`·`meta`·`explanation` 스킬을 제공합니다(각각 같은 이름의 `kosis` 명령에
-대응하며, `indicator` 명령은 스킬이 없습니다). 먼저 패키지를 설치하고 API 키를 설정하세요.
+- 이 저장소는 Claude Code·Codex용 플러그인 마켓플레이스도 겸합니다.
+- `search`·`list`·`data`·`meta`·`explanation` 스킬을 제공하며, 각각 같은 이름의 `kosis` 명령에
+  대응합니다.
+- 먼저 패키지를 설치하고 API 키를 설정하세요.
 
 **Claude Code**
 

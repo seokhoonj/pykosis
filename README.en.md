@@ -9,13 +9,14 @@
 
 Read Korea's national statistics from **KOSIS** (the Korean Statistical Information Service).
 
-KOSIS serves approved statistics across nearly every field -- population, the economy,
-prices, employment, housing, health, education, industry. pykosis wraps the six KOSIS Open
-API services so you can search the table catalog, fetch a table's data, and pivot its items
-into columns for analysis.
+Population and households, labor and wages, income, consumption and assets, prices and the
+national accounts, finance and the balance of payments, health and welfare, education,
+housing and land, agriculture and fisheries, mining, manufacturing and construction,
+transport and logistics, ICT, science and technology, environment and energy, and regional
+statistics.
 
-The **top-100 KOSIS headline indicators** are also reachable by name, without a table code,
-like `kosis.population.total_fertility_rate` (see the section below).
+Frequently-used indicators are reached through an **accessor** (like
+`kosis.population.total_fertility_rate`); everything else by table code.
 
 ## 1. Install
 
@@ -23,10 +24,29 @@ like `kosis.population.total_fertility_rate` (see the section below).
 pip install pykosis
 ```
 
-Get a free API key at <https://kosis.kr/openapi/>. The key is resolved from
-`KOSIS(api_key="...")`, the `KOSIS_API_KEY` environment variable, then
-`~/.config/pykosis/credentials.json`, in that order. It is the same name the R `kosis`
-package uses, so a key in `.Renviron` is picked up unchanged.
+Get a free API key at <https://kosis.kr/openapi/>. There are two ways to give it to pykosis.
+
+**Option 1 — pass it in code** (to try it once)
+
+```python
+from pykosis import KOSIS
+
+kosis = KOSIS(api_key="your-key")
+```
+
+**Option 2 — save it to a file** (recommended — save once, never pass it again)
+
+Create `~/.config/pykosis/credentials.json` with:
+
+```json
+{ "KOSIS_API_KEY": "your-key" }
+```
+
+After that, a bare `KOSIS()` finds this key on its own.
+
+> Prefer an environment variable? On macOS/Linux, in the terminal:
+> `export KOSIS_API_KEY="your-key"`. On Windows, in PowerShell:
+> `setx KOSIS_API_KEY "your-key"`.
 
 ## 2. Example
 
@@ -162,8 +182,8 @@ kosis.fetch_indicator("160")   # indicator 160 = total fertility rate (concept, 
 
 ## 4. Curated indicators (top 100)
 
-Reach the top-100 KOSIS indicators by name as `kosis.<group>.<indicator>.fetch()` -- no
-table code, and editor autocomplete finds them.
+Reach the top-100 KOSIS indicators through their accessor, `kosis.<group>.<indicator>.fetch()`
+-- no table code, and editor autocomplete finds them.
 
 ```python
 kosis.population.total_fertility_rate.fetch()   # total fertility rate
@@ -429,10 +449,10 @@ kosis indicator 160                           # key-indicator documentation
 
 ## 6. Use from AI coding agents
 
-This repo doubles as a plugin marketplace for Claude Code and Codex -- it provides
-`search`, `list`, `data`, `meta`, and `explanation` skills, each named after the matching
-`kosis` command (the `indicator` command has no skill). Install the package and set an API
-key first.
+- This repo doubles as a plugin marketplace for Claude Code and Codex.
+- It provides `search`, `list`, `data`, `meta`, and `explanation` skills, each named after
+  the matching `kosis` command.
+- Install the package and set an API key first.
 
 **Claude Code**
 
