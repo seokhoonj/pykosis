@@ -22,8 +22,9 @@
 pip install pykosis
 ```
 
-먼저 이 패키지를 쓰려면 KOSIS API 키가 필요합니다. <https://kosis.kr/openapi/>에서 무료로
-발급받으세요. 발급하신 키를 넣는 방법은 두 가지입니다.
+이 패키지는 KOSIS API 키가 필요합니다. <https://kosis.kr/openapi/>에서 무료로 발급받으세요.
+
+발급하신 키를 넣는 방법은 두 가지입니다.
 
 **방법 1 — 코드에서 직접 넣기** (바로 한 번 써볼 때)
 
