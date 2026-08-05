@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import httpx
+import pytest
 
-from pykosis import KOSIS
+from pykosis import KOSIS, KOSISResponseError
 
 
 def _handler(responses: list, recorded: list[httpx.Request]):
@@ -80,3 +81,14 @@ def test_every_group_and_indicator_is_reachable():
 def test_group_cached():
     kosis = KOSIS("TESTKEY", transport=_handler([], []))
     assert kosis.population is kosis.population  # cached_property
+
+
+def test_fetch_raises_after_exhausting_all_obj_levels():
+    recorded: list[httpx.Request] = []
+    missing = {"err": "20", "errMsg": "필수요청변수값이 누락되었습니다."}
+    kosis = KOSIS("TESTKEY", transport=_handler([missing] * 8, recorded))
+    with pytest.raises(KOSISResponseError) as info:
+        kosis.population.total_fertility_rate.fetch()  # whole-table, no pinned levels
+    assert info.value.code == "20"
+    assert len(recorded) == 8  # objL1..objL8 tried, each still missing
+    assert recorded[-1].url.params["objL8"] == "ALL"

@@ -16,6 +16,7 @@ from pykosis import (
     KOSISNetworkError,
     KOSISRateLimitError,
     KOSISResponseError,
+    MetaType,
     ViewCode,
 )
 
@@ -263,6 +264,14 @@ def test_fetch_meta_uses_getmeta_and_type():
     assert url.path == "/openapi/statisticsData.do"
     assert url.params["method"] == "getMeta"
     assert url.params["type"] == "ITM"
+
+
+def test_meta_type_accepts_alias_code_and_enum():
+    for value in ("item", "ITEM", "ITM", MetaType.ITEM):  # alias / vendor code / enum
+        recorded: list[httpx.Request] = []
+        kosis = _client([[{}]], recorded)
+        kosis.fetch_meta(org_id="101", tbl_id="DT_1B42", meta_type=value)
+        assert recorded[0].url.params["type"] == "ITM"
 
 
 # -- fetch_indicator -------------------------------------------------------

@@ -54,24 +54,24 @@ class Frequency(StrEnum):
     ANNUAL      = "Y"
     HALF_YEARLY = "H"
     QUARTERLY   = "Q"
-    MONTHLY    = "M"
-    DAILY      = "D"
-    MULTIYEAR  = "F"
-    IRREGULAR  = "IR"
+    MONTHLY     = "M"
+    DAILY       = "D"
+    MULTIYEAR   = "F"
+    IRREGULAR   = "IR"
 
 
 class MetaType(StrEnum):
     """Which slice of a table's metadata :meth:`KOSIS.fetch_meta` returns (``type``)."""
 
-    TABLE       = "TBL"     # table name
-    ORGANIZATION = "ORG"    # organization name
-    PERIOD      = "PRD"     # recorded periods
-    ITEM        = "ITM"     # classifications and items
-    COMMENT     = "CMMT"    # annotations
-    UNIT        = "UNIT"    # units
-    SOURCE      = "SOURCE"  # data source and contact
-    WEIGHT      = "WGT"     # weights
-    UPDATE      = "NCD"     # last-update record
+    TABLE        = "TBL"     # table name
+    ORGANIZATION = "ORG"     # organization name
+    PERIOD       = "PRD"     # recorded periods
+    ITEM         = "ITM"     # classifications and items
+    COMMENT      = "CMMT"    # annotations
+    UNIT         = "UNIT"    # units
+    SOURCE       = "SOURCE"  # data source and contact
+    WEIGHT       = "WGT"     # weights
+    UPDATE       = "NCD"     # last-update record
 
 
 class Sort(StrEnum):

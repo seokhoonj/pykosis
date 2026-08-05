@@ -70,12 +70,12 @@ def pivot_items(
         if item not in seen_items:
             seen_items.add(item)
             items.append(item)
-        value = row.get("data_value")
-        if item in entry and entry[item] != value:
+        data_value = row.get("data_value")
+        if item in entry and entry[item] != data_value:
             raise ValueError(
                 f"two rows share key {key} and {label}={item!r} but differ; "
                 f"pivot on 'itm_id' for a unique label")
-        entry[item] = value
+        entry[item] = data_value
 
     wide_rows: list[dict[str, Any]] = []
     for entry in grouped.values():

@@ -55,11 +55,11 @@ def _key_from_file() -> str | None:
         raise KOSISConfigError(f"could not read {path}: {err}") from err
 
     try:
-        data = json.loads(text)
+        credentials = json.loads(text)
     except json.JSONDecodeError as err:
         raise KOSISConfigError(f"{path} is not valid JSON: {err}") from err
-    if not isinstance(data, dict):
+    if not isinstance(credentials, dict):
         raise KOSISConfigError(f"{path} must contain a JSON object")
 
-    key = data.get(_ENV_VAR)
+    key = credentials.get(_ENV_VAR)
     return key if isinstance(key, str) and key else None
