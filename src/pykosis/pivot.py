@@ -18,7 +18,7 @@ organization, table, classifications ``c1``..``c8``, and period) becomes the row
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, Literal
 
 # Columns describing the item/unit rather than a classification dimension; they collapse
 # into the pivoted value columns and so drop out of the row key.
@@ -34,7 +34,7 @@ _LABELS = ("itm_nm", "itm_id", "itm_nm_eng")
 
 def pivot_items(
     rows: Sequence[Mapping[str, Any]],
-    label: str = "itm_nm",
+    label: Literal["itm_nm", "itm_id", "itm_nm_eng"] = "itm_nm",
 ) -> list[dict[str, Any]]:
     """Pivot long rows to wide, one value column per distinct item.
 

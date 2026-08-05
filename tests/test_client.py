@@ -343,6 +343,18 @@ def test_cache_serves_repeat_without_second_request():
     assert len(recorded) == 1  # second call served from cache
 
 
+def test_cache_misses_on_a_different_query():
+    recorded: list[httpx.Request] = []
+    kosis = KOSIS("TESTKEY", cache_ttl=60,
+                  transport=_handler([[_data_row(DT="1.0")], [_data_row(DT="2.0")]],
+                                     recorded))
+    first = kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
+    second = kosis.fetch_data(org_id="101", tbl_id="DT_1B41")  # a different table
+    assert len(recorded) == 2  # the second query must not hit the first's cache entry
+    assert first[0]["data_value"] == 1.0
+    assert second[0]["data_value"] == 2.0
+
+
 def test_clear_cache_forces_refetch():
     recorded: list[httpx.Request] = []
     kosis = KOSIS("TESTKEY", cache_ttl=60,
@@ -415,3 +427,33 @@ def test_server_error_retries_then_raises_network_error(monkeypatch):
 def test_bad_cache_ttl_rejected():
     with pytest.raises(ValueError):
         KOSIS("TESTKEY", cache_ttl=0)
+
+
+def _rendered(exc: BaseException) -> str:
+    """Everything a caller could print for ``exc``: its message and full traceback."""
+    import traceback
+
+    return str(exc) + "".join(
+        traceback.format_exception(type(exc), exc, exc.__traceback__))
+
+
+def test_api_key_never_reaches_an_error_message(monkeypatch):
+    # The key rides in the request URL (apiKey=...). No error path -- rate limit,
+    # other 4xx, 5xx after retries, or a transport failure -- may surface it in the
+    # exception message or a printed traceback. (Package constitution Ch 12.)
+    monkeypatch.setattr("pykosis._transport.time.sleep", lambda _seconds: None)
+
+    def _connect_error(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("boom", request=request)
+
+    cases = [
+        (lambda r: httpx.Response(429), KOSISRateLimitError),
+        (lambda r: httpx.Response(404), KOSISNetworkError),
+        (lambda r: httpx.Response(500), KOSISNetworkError),
+        (_connect_error, KOSISNetworkError),
+    ]
+    for handler, expected in cases:
+        kosis = KOSIS("SECRETKEY123", transport=httpx.MockTransport(handler))
+        with pytest.raises(expected) as info:
+            kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
+        assert "SECRETKEY123" not in _rendered(info.value)

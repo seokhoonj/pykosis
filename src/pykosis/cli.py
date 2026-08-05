@@ -70,6 +70,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KOSISError as err:
         print(f"{_ERROR_PREFIX}{err}", file=sys.stderr)
         return 1
+    except ValueError as err:
+        # A bad argument combination (e.g. --end without --start) or a pivot key
+        # clash surfaces as a library ValueError; relay it as a clean usage error
+        # rather than a raw traceback.
+        print(f"{_ERROR_PREFIX}{err}", file=sys.stderr)
+        return 2
 
 
 def _make_parser() -> argparse.ArgumentParser:

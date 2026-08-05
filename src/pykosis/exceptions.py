@@ -67,6 +67,6 @@ class KOSISNetworkError(KOSISError):
     """The request failed at the transport or HTTP layer.
 
     A timeout, DNS failure, connection reset, or a non-success HTTP status that KOSIS
-    never turned into an error body. The underlying exception is chained as
-    ``__cause__``.
+    never turned into an error body. The underlying transport exception is deliberately
+    NOT chained: its string embeds the request URL, which carries the API key.
     """

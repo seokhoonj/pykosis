@@ -83,7 +83,6 @@ class _Transport:
         """
         url = f"{base_url}?{urlencode(params)}"
         last_error: KOSISNetworkError | None = None
-        last_cause: Exception | None = None
         for attempt in range(self._max_attempts):
             self._wait_for_next_slot()
             try:
@@ -91,17 +90,25 @@ class _Transport:
                 response.raise_for_status()
                 payload = response.json()
             except httpx.HTTPStatusError as err:
+                # Message from the status line ONLY. ``str(err)`` -- and the httpx
+                # exception chained as a cause -- embed the request URL, which carries
+                # ``apiKey=<key>``. Never surface either; ``from None`` also keeps that
+                # URL out of a printed traceback.
                 status = err.response.status_code
+                detail = f"HTTP {status} {err.response.reason_phrase}".rstrip()
                 if status == 429:  # Too Many Requests -- the rate cap, not retried
-                    raise KOSISRateLimitError("429", str(err)) from err
+                    raise KOSISRateLimitError("429", detail) from None
                 if status < 500:  # any other 4xx is the server's answer
-                    raise KOSISNetworkError(str(err)) from err
-                last_error, last_cause = KOSISNetworkError(str(err)), err  # 5xx: retry
+                    raise KOSISNetworkError(detail) from None
+                last_error = KOSISNetworkError(detail)  # 5xx: retry
             except httpx.HTTPError as err:  # timeout, connection reset, ...
-                last_error, last_cause = KOSISNetworkError(str(err)), err
+                # Report the failure kind, not ``str(err)``/the cause -- same reason.
+                last_error = KOSISNetworkError(f"request failed ({type(err).__name__})")
             except json.JSONDecodeError as err:
                 # A 200 whose body is not JSON (a proxy/maintenance HTML page) must
                 # surface through the KOSISError hierarchy, not as a raw decode error.
+                # Safe to chain: a decode error is about the response body, not the
+                # key-bearing request URL.
                 raise KOSISResponseError(
                     "UNKNOWN", f"non-JSON response from KOSIS: {err}") from err
             else:
@@ -109,8 +116,7 @@ class _Transport:
             if attempt + 1 < self._max_attempts:
                 time.sleep(_RETRY_BACKOFF_SECONDS * _RETRY_BACKOFF_FACTOR**attempt)
         if last_error is not None:
-            # Chain the httpx cause the KOSISNetworkError docstring promises.
-            raise last_error from last_cause
+            raise last_error
         raise KOSISNetworkError("request failed")
 
     def _wait_for_next_slot(self) -> None:

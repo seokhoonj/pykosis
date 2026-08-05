@@ -25,6 +25,8 @@ The key can also be stored in `~/.config/pykosis/credentials.json` as
 `{"KOSIS_API_KEY": "..."}`. Without a key the CLI exits with
 `kosis: no KOSIS API key ...`; relay that and point the user at the KOSIS site.
 
+**Never print, log, quote, or echo the `KOSIS_API_KEY` value itself** -- confirm only that a key is set.
+
 ## Running
 
 ```

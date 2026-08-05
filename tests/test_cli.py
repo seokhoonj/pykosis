@@ -171,3 +171,13 @@ def test_config_error_reported(capsys):
     _FakeKOSIS.error = KOSISConfigError("no KOSIS API key")
     assert cli.main(["list"]) == 1
     assert "no KOSIS API key" in capsys.readouterr().err
+
+
+def test_value_error_reported_as_usage_error(capsys):
+    # A library ValueError (bad argument combination / pivot key clash) must relay as a
+    # clean one-line error with exit 2, not a raw traceback.
+    _FakeKOSIS.error = ValueError("end_period requires start_period")
+    assert cli.main(["data", "101", "DT_1B42", "--end", "2024"]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith("kosis: ")
+    assert "Traceback" not in err
