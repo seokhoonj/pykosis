@@ -29,7 +29,7 @@ def test_indicator_fetch_hits_its_table_with_its_frequency():
     recorded: list[httpx.Request] = []
     row = {"ORG_ID": "101", "TBL_ID": "DT_1J22001", "PRD_DE": "202401", "DT": "119.8"}
     kosis = KOSIS("TESTKEY", transport=_handler([[row]], recorded))
-    rows = kosis.income_consumption.consumer_price_index.fetch()
+    rows = kosis.income_consumption.cpi.fetch()
     assert rows[0]["data_value"] == 119.8
     url = recorded[0].url
     assert url.params["orgId"] == "101"

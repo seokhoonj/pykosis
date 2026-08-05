@@ -756,12 +756,12 @@ class _EducationLabor:
                 frequency=Frequency.ANNUAL,
             ),
         )
-        self.private_education_spending = Indicator(
+        self.private_education_expenditure = Indicator(
             client,
             IndicatorSpec(
-                path="education_labor.private_education_spending",
+                path="education_labor.private_education_expenditure",
                 name_ko="학생사교육비",
-                name_en="private_education_spending",
+                name_en="private_education_expenditure",
                 group="education_labor",
                 org_id="101",
                 tbl_id="DT_1PE003",
@@ -822,24 +822,24 @@ class _IncomeConsumption:
                 frequency=Frequency.ANNUAL,
             ),
         )
-        self.producer_price_index = Indicator(
+        self.ppi = Indicator(
             client,
             IndicatorSpec(
-                path="income_consumption.producer_price_index",
+                path="income_consumption.ppi",
                 name_ko="생산자물가지수",
-                name_en="producer_price_index",
+                name_en="ppi",
                 group="income_consumption",
                 org_id="301",
                 tbl_id="DT_404Y014",
                 frequency=Frequency.MONTHLY,
             ),
         )
-        self.consumer_price_index = Indicator(
+        self.cpi = Indicator(
             client,
             IndicatorSpec(
-                path="income_consumption.consumer_price_index",
+                path="income_consumption.cpi",
                 name_ko="소비자물가지수",
-                name_en="consumer_price_index",
+                name_en="cpi",
                 group="income_consumption",
                 org_id="101",
                 tbl_id="DT_1J22001",
@@ -966,12 +966,12 @@ class _HousingTransport:
                 frequency=Frequency.MONTHLY,
             ),
         )
-        self.house_sale_price_index = Indicator(
+        self.housing_sales_price_index = Indicator(
             client,
             IndicatorSpec(
-                path="housing_transport.house_sale_price_index",
+                path="housing_transport.housing_sales_price_index",
                 name_ko="주택매매가격지수",
-                name_en="house_sale_price_index",
+                name_en="housing_sales_price_index",
                 group="housing_transport",
                 org_id="408",
                 tbl_id="DT_30404_A012",
@@ -1196,12 +1196,12 @@ class _Industry:
                 frequency=Frequency.MONTHLY,
             ),
         )
-        self.grain_production = Indicator(
+        self.food_crop_production = Indicator(
             client,
             IndicatorSpec(
-                path="industry.grain_production",
+                path="industry.food_crop_production",
                 name_ko="식량작물 생산량",
-                name_en="grain_production",
+                name_en="food_crop_production",
                 group="industry",
                 org_id="101",
                 tbl_id="DT_1ET0021",

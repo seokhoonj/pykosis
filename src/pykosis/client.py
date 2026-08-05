@@ -88,7 +88,7 @@ class KOSIS(_CurationGroups):
     For KOSIS's headline "100대 지표" you need not remember a table code: the client
     carries a tree of curated indicators grouped by category, so the call above is also
     ``kosis.population.life_expectancy.fetch()`` and
-    ``kosis.income_consumption.consumer_price_index.fetch()``.
+    ``kosis.income_consumption.cpi.fetch()``.
 
     Discover the ``org_id`` / ``tbl_id`` a statistic lives under with :meth:`search`
     (by keyword) or :meth:`fetch_list` (browsing the category tree); read a table's

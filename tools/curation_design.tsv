@@ -35,13 +35,13 @@ education_labor.dual_income_households	education_labor	dual_income_households	�
 education_labor.job_vacancies	education_labor	job_vacancies	빈일자리	118	DT_118N_MON066	monthly	
 education_labor.unemployment_rate	education_labor	unemployment_rate	실업률	101	DT_1DA7001S	monthly	
 education_labor.school_students	education_labor	school_students	초중고학생수	334	DT_1963003_004	annual	
-education_labor.private_education_spending	education_labor	private_education_spending	학생사교육비	101	DT_1PE003	annual	
+education_labor.private_education_expenditure	education_labor	private_education_expenditure	학생사교육비	101	DT_1PE003	annual	
 income_consumption.household_debt	income_consumption	household_debt	가구부채	101	DT_1HDAAA01	annual	
 income_consumption.household_consumption_expenditure	income_consumption	household_consumption_expenditure	가구소비지출	101	DT_1L9U101	quarterly	
 income_consumption.median_household_income	income_consumption	median_household_income	가구중위소득	101	DT_1HDALF05	annual	
 income_consumption.farm_household_income	income_consumption	farm_household_income	농가소득	101	DT_1EA1501	annual	
-income_consumption.producer_price_index	income_consumption	producer_price_index	생산자물가지수	301	DT_404Y014	monthly	
-income_consumption.consumer_price_index	income_consumption	consumer_price_index	소비자물가지수	101	DT_1J22001	monthly	
+income_consumption.ppi	income_consumption	ppi	생산자물가지수	301	DT_404Y014	monthly	
+income_consumption.cpi	income_consumption	cpi	소비자물가지수	101	DT_1J22001	monthly	
 leisure.books_read_per_capita	leisure	books_read_per_capita	1인당 평균독서권수	101	DT_1SSCL020R	multiyear	
 leisure.domestic_travel_rate	leisure	domestic_travel_rate	국내여행 경험률	101	DT_1SSCL050R	multiyear	
 leisure.libraries	leisure	libraries	도서관수	113	DT_113_STBL_1028308	annual	
@@ -51,7 +51,7 @@ leisure.inbound_tourists	leisure	inbound_tourists	외래관광객수	314	DT_TRD_
 leisure.overseas_travel_rate	leisure	overseas_travel_rate	해외여행 경험률	101	DT_1SSCL060R	multiyear	
 housing_transport.urban_population_ratio	housing_transport	urban_population_ratio	도시지역 인구비율	460	TX_315_2009_H1001	annual	
 housing_transport.housing_construction_permits	housing_transport	housing_construction_permits	주택건설 인허가수	116	DT_MLTM_1952	monthly	
-housing_transport.house_sale_price_index	housing_transport	house_sale_price_index	주택매매가격지수	408	DT_30404_A012	monthly	
+housing_transport.housing_sales_price_index	housing_transport	housing_sales_price_index	주택매매가격지수	408	DT_30404_A012	monthly	
 housing_transport.housing_supply_ratio	housing_transport	housing_supply_ratio	주택보급률	116	DT_MLTM_2100	annual	
 housing_transport.housing_units	housing_transport	housing_units	주택수	101	DT_1JU1501	annual	
 housing_transport.land_price_change_rate	housing_transport	land_price_change_rate	지가변동률	408	DT_PLCAHTUSE	monthly	
@@ -79,7 +79,7 @@ industry.return_to_farming_population	industry	return_to_farming_population	귀�
 industry.farm_population	industry	farm_population	농가인구	101	DT_1EA1011	annual	
 industry.service_production_index	industry	service_production_index	서비스업생산지수	101	DT_1KC2020	monthly	
 industry.retail_sales	industry	retail_sales	소매판매액	101	DT_1K41002	monthly	
-industry.grain_production	industry	grain_production	식량작물 생산량	101	DT_1ET0021	annual	
+industry.food_crop_production	industry	food_crop_production	식량작물 생산량	101	DT_1ET0021	annual	
 industry.online_shopping_transaction_value	industry	online_shopping_transaction_value	온라인쇼핑몰 거래액	101	DT_1KE10041	monthly	
 industry.manufacturing_capacity_utilization_index	industry	manufacturing_capacity_utilization_index	제조업 생산능력 및 가동률지수	101	DT_1F32001	monthly	
 industry.manufacturing_production_index	industry	manufacturing_production_index	제조업생산지수	101	DT_1F02001	monthly	
