@@ -26,7 +26,7 @@ pip install pykosis
 
 pykosis needs a KOSIS API key. Get one free at <https://kosis.kr/openapi/>.
 
-There are two ways to supply it.
+Supply the key as follows.
 
 **Option 1 — pass it in code** (to try it once)
 
