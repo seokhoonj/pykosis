@@ -15,8 +15,8 @@ housing and land, agriculture and fisheries, mining, manufacturing and construct
 transport and logistics, ICT, science and technology, environment and energy, and regional
 statistics.
 
-Frequently-used indicators are reached through an **accessor** (like
-`kosis.population.total_fertility_rate`); everything else by table code.
+Frequently-used indicators are reached through an **accessor** (like `kosis.economy.gdp`);
+everything else by table code.
 
 ## 1. Install
 
@@ -55,31 +55,29 @@ from pykosis import KOSIS, pivot_items
 
 kosis = KOSIS()
 
-# find a table code (org_id, tbl_id) in the catalog
-kosis.fetch_list(view_code="MT_ZTITLE")                         # "MT_ZTITLE" or "subject" both work
-kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # the life-table tables
+kosis.search("생명표")   # 1) find the table code by keyword -> complete life table = 101 / DT_1B42
 
-# fetch a table (the complete life table)
+# 2) fetch that table's data (the complete life table)
 data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
+
+# 3) spread items across columns
 life_table = pivot_items(data, label="itm_nm")
 ```
 
-`view_code` accepts either the KOSIS code (`"MT_ZTITLE"`) or the short name (`"subject"`) --
-the twelve views are listed in §3.1 below. Every result is a `list[dict]`, so
-`pandas.DataFrame(life_table)` or `polars.DataFrame(life_table)` turns it into a table in one
-line.
+Every result is a `list[dict]`, so `pandas.DataFrame(life_table)` or
+`polars.DataFrame(life_table)` turns it into a table in one line.
 
 ## 3. Usage
 
-### 3.1 `fetch_list` · `search` -- find a table code
+### 3.1 `search` · `fetch_list` -- find a table code
 
-KOSIS identifies a statistic by an **organization (`org_id`)** and a **table (`tbl_id`)**. If
-you do not know the codes, find them two ways:
+KOSIS identifies a statistic by an **organization (`org_id`)** and a **table (`tbl_id`)**.
+If you do not know the codes, find them with `search` (keyword) or `fetch_list` (the
+classification tree).
 
-- **`search`** -- by keyword. Matching tables come back ranked, several at a time (20 by default).
-- **`fetch_list`** -- by descending the classification tree one level at a time.
-
-The top `search` hit is not necessarily the one you want, so read each `tbl_nm` and pick the code.
+**`search` -- by keyword.** Matching tables come back ranked, several at a time (20 by
+default). The top hit is not necessarily the one you want, so read each `tbl_nm` and pick
+the `org_id` / `tbl_id`.
 
 ```python
 hits = kosis.search("생명")   # tables containing "생명" (life / life-insurance), ranked
@@ -89,19 +87,15 @@ hits = kosis.search("생명")   # tables containing "생명" (life / life-insura
 # 101  DT_1B42           완전생명표(1세별)       <- the one we want
 # 101  DT_1B43           사망원인생명표(5세별)
 # ...
-
-# fetch with the code you picked from the list above
-data = kosis.fetch_data(
-    org_id="101",      # organization: 101 = Statistics Korea
-    tbl_id="DT_1B42",  # table: DT_1B42 = complete life table
-    obj_l1="ALL",      # classification level 1, all values
-)
 ```
 
 - Each hit also carries its classification path (`full_path_id`, e.g. `"F > F_29"`), so you can tell categories apart.
 - Narrowing the keyword (`kosis.search("완전생명표")`) floats the right table to the top.
 
-To browse by classification instead, descend the tree one level at a time:
+Pass the `org_id` / `tbl_id` you picked to `fetch_data` (§3.2) to fetch the data.
+
+**`fetch_list` -- by classification tree.** When you would rather browse than search,
+descend the tree one level at a time.
 
 ```python
 kosis.fetch_list(view_code="MT_ZTITLE")                         # top level (by subject)
@@ -137,6 +131,9 @@ takes either, while the `kosis` command and the plugin skills take the short nam
   recurs, add `obj_l3="ALL"`, and so on.
 - Tables that need `obj_l5`..`obj_l8` are rare.
 
+For example, cancer prevalence (`117`/`DT_117N_A00124`) is split by cancer type, sex, and
+age, so `obj_l1` alone is not enough.
+
 ```python
 # defaults: obj_l1="ALL", obj_l2="", obj_l3="", ...
 kosis.fetch_data(org_id="117", tbl_id="DT_117N_A00124")
@@ -149,8 +146,16 @@ kosis.fetch_data(org_id="117", tbl_id="DT_117N_A00124", obj_l2="ALL", obj_l3="AL
 ```
 
 Set the window with `start_period` / `end_period` (omit for the most recent 3), and the
-frequency with `frequency` (see the table below). A single call returns up to 40,000 cells,
-so narrow the window or classification for large tables.
+frequency with `frequency` (see §7).
+
+```python
+# the complete life table, 2015-2023, annual
+kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL",
+                 frequency="annual", start_period="2015", end_period="2023")
+```
+
+A single call returns up to 40,000 cells, so narrow the window or classification for large
+tables.
 
 ### 3.3 `pivot_items` -- items to columns
 
@@ -186,9 +191,9 @@ Reach the top-100 KOSIS indicators through their accessor, `kosis.<group>.<indic
 -- no table code, and editor autocomplete finds them.
 
 ```python
-kosis.population.total_fertility_rate.fetch()   # total fertility rate
-kosis.income_consumption.cpi.fetch()            # consumer price index
-kosis.health_welfare.life_expectancy.fetch()    # life expectancy
+kosis.economy.gdp.fetch()                        # GDP
+kosis.income_consumption.cpi.fetch()             # consumer price index
+kosis.health_welfare.life_expectancy.fetch()     # life expectancy
 ```
 
 - `.fetch(start_period=, end_period=)` sets a window; omit it for the most recent 3.
@@ -471,12 +476,14 @@ codex plugin marketplace add seokhoonj/pykosis
 codex plugin add kosis@pykosis
 ```
 
-To use a skill in **Claude Code** without installing the plugin, symlink it into Claude's
-skills directory and call it without the `kosis:` prefix (e.g. `/data`).
+To use a skill without installing the plugin, symlink it into the agent's skills directory.
 
 ```sh
-ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
+ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data   # Claude Code
+ln -s "$PWD/plugins/kosis/skills/data" ~/.codex/skills/data    # Codex
 ```
+
+It is then picked up on the next turn, without the `kosis:` prefix.
 
 ## 7. Frequency
 

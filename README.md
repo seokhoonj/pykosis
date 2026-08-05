@@ -13,8 +13,8 @@
 교육, 주거와 국토, 농림·수산, 광공업과 건설, 교통·물류, 정보통신, 과학·기술, 환경·에너지,
 지역통계까지 다룹니다.
 
-자주 쓰는 지표는 `kosis.population.total_fertility_rate` 같은 **접근자**로 바로 꺼내고, 그 밖의
-통계는 통계표 코드로 조회합니다.
+자주 쓰는 지표는 `kosis.economy.gdp`(국내총생산) 같은 **접근자**로 바로 꺼내고, 그 밖의 통계는
+통계표 코드로 조회합니다.
 
 ## 1. 설치
 
@@ -52,30 +52,27 @@ from pykosis import KOSIS, pivot_items
 
 kosis = KOSIS()
 
-# 통계표 목록에서 통계표 코드(org_id, tbl_id) 찾기
-kosis.fetch_list(view_code="MT_ZTITLE")                         # "MT_ZTITLE" or "subject" 둘 다 됨
-kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # 생명표 통계표 찾기
+kosis.search("생명표")   # 1) 키워드로 통계표 코드 찾기 → 완전생명표 = 101 / DT_1B42
 
-# 통계자료 가져오기 (완전생명표)
+# 2) 고른 코드로 통계자료 가져오기 (완전생명표)
 data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
+
+# 3) 항목을 가로 열로 펼치기
 life_table = pivot_items(data, label="itm_nm")
 ```
 
-`view_code`에는 KOSIS 코드(`"MT_ZTITLE"`)도 짧은 이름(`"subject"`)도 쓸 수 있습니다(12가지 뷰는
-§3.1의 표). 반환은 `dict`의 목록이라, `pandas.DataFrame(life_table)`·`polars.DataFrame(life_table)`으로
-바로 바꿉니다.
+반환은 `dict`의 목록이라, `pandas.DataFrame(life_table)`·`polars.DataFrame(life_table)`으로 바로
+바꿉니다.
 
 ## 3. 사용법
 
-### 3.1 `fetch_list` · `search` — 통계표 코드 찾기
+### 3.1 `search` · `fetch_list` — 통계표 코드 찾기
 
-KOSIS는 통계를 **기관(`org_id`)** 과 **통계표(`tbl_id`)** 로 식별합니다. 코드를 모르면 두 가지로
-찾습니다.
+KOSIS는 통계를 **기관(`org_id`)** 과 **통계표(`tbl_id`)** 로 식별합니다. 코드를 모르면
+`search`(키워드)나 `fetch_list`(분류 트리)로 찾습니다.
 
-- **`search`** — 키워드로 찾습니다. 키워드가 든 표가 **순위대로 여러 개** 나옵니다.
-- **`fetch_list`** — 분류 트리를 한 단계씩 내려가며 찾습니다.
-
-`search`는 맨 위가 꼭 원하는 표는 아니니, 표 이름(`tbl_nm`)을 보고 원하는 코드를 고릅니다.
+**`search` — 키워드로 찾기.** 키워드가 든 표가 **순위대로 여러 개** 나옵니다. 맨 위가 꼭 원하는
+표는 아니니, 표 이름(`tbl_nm`)을 보고 원하는 `org_id`·`tbl_id`를 고릅니다.
 
 ```python
 hits = kosis.search("생명")   # '생명'이 든 표를 순위대로 (여러 개)
@@ -85,19 +82,15 @@ hits = kosis.search("생명")   # '생명'이 든 표를 순위대로 (여러 �
 # 101  DT_1B42           완전생명표(1세별)       <- 원하는 표
 # 101  DT_1B43           사망원인생명표(5세별)
 # ...
-
-# 위 목록에서 고른 코드로 데이터를 가져온다
-data = kosis.fetch_data(
-    org_id="101",      # 기관: 101 = 통계청
-    tbl_id="DT_1B42",  # 통계표: DT_1B42 = 완전생명표
-    obj_l1="ALL",      # 분류 1레벨 전체
-)
 ```
 
 - 각 행에는 분류 경로(`full_path_id`, 예: `"F > F_29"`)도 담겨 있어 분류를 구분할 수 있습니다.
 - 키워드를 좁히면(`kosis.search("완전생명표")`) 원하는 표가 상위에 바로 뜹니다.
 
-코드를 모르고 분류부터 훑고 싶으면 `fetch_list`로 트리를 한 단계씩 내려갑니다.
+고른 `org_id`·`tbl_id`는 `fetch_data`(§3.2)에 넘겨 데이터를 가져옵니다.
+
+**`fetch_list` — 분류 트리로 찾기.** 코드를 모르고 분류부터 훑고 싶을 때, 트리를 한 단계씩
+내려갑니다.
 
 ```python
 kosis.fetch_list(view_code="MT_ZTITLE")                         # 최상위 분류 (주제별)
@@ -130,6 +123,8 @@ kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # 그 아래 목
 - 오류 `err=20`(필수 분류 누락)이 나면 `obj_l2="ALL"`을 더합니다. 또 나면 `obj_l3="ALL"`, ... 반복.
 - `obj_l5`~`obj_l8`이 필요한 표는 드뭅니다.
 
+예로, **암유병자수**(`117`/`DT_117N_A00124`)는 암종·성·연령으로 나뉘어 `obj_l1`만으론 부족합니다.
+
 ```python
 # 기본값: obj_l1="ALL", obj_l2="", obj_l3="", ...
 kosis.fetch_data(org_id="117", tbl_id="DT_117N_A00124")
@@ -141,7 +136,14 @@ kosis.fetch_data(org_id="117", tbl_id="DT_117N_A00124", obj_l2="ALL")
 kosis.fetch_data(org_id="117", tbl_id="DT_117N_A00124", obj_l2="ALL", obj_l3="ALL")
 ```
 
-기간은 `start_period`·`end_period`(생략하면 최근 3개), 주기는 `frequency`로 정합니다(아래 표).
+기간은 `start_period`·`end_period`로 정하고(생략하면 최근 3개), 주기는 `frequency`로 맞춥니다(§7).
+
+```python
+# 완전생명표를 2015~2023년, 연 단위로
+kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL",
+                 frequency="annual", start_period="2015", end_period="2023")
+```
+
 한 번에 40,000셀까지이므로, 큰 표는 기간이나 분류를 좁혀 부릅니다.
 
 ### 3.3 `pivot_items` — 항목을 열로
@@ -176,9 +178,9 @@ kosis.fetch_indicator("160")   # 지표번호 160 = 합계출산율 (개념·산
 꺼냅니다. 편집기에서 `kosis.` 뒤를 점(`.`)으로 타고 들어가면 자동완성으로 찾을 수 있습니다.
 
 ```python
-kosis.population.total_fertility_rate.fetch()   # 합계출산율
-kosis.income_consumption.cpi.fetch()            # 소비자물가지수
-kosis.health_welfare.life_expectancy.fetch()    # 기대수명
+kosis.economy.gdp.fetch()                        # 국내총생산(GDP)
+kosis.income_consumption.cpi.fetch()             # 소비자물가지수
+kosis.health_welfare.life_expectancy.fetch()     # 기대수명
 ```
 
 - `.fetch(start_period=, end_period=)`로 기간을 정하고, 생략하면 최근 3개를 가져옵니다.
@@ -460,12 +462,14 @@ codex plugin marketplace add seokhoonj/pykosis
 codex plugin add kosis@pykosis
 ```
 
-**Claude Code**에서 플러그인 없이 쓰려면, 스킬을 Claude 스킬 디렉터리에 symlink한 뒤
-접두사(`kosis:`) 없이 `/data`처럼 부르면 됩니다.
+플러그인으로 설치하지 않고 쓰려면, 스킬을 각 에이전트의 스킬 디렉터리에 symlink합니다.
 
 ```sh
-ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
+ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data   # Claude Code
+ln -s "$PWD/plugins/kosis/skills/data" ~/.codex/skills/data    # Codex
 ```
+
+그러면 다음 턴부터 접두사(`kosis:`) 없이 인식됩니다.
 
 ## 7. 수록 주기 (frequency)
 
