@@ -17,7 +17,7 @@ into columns for analysis.
 The **top-100 KOSIS headline indicators** are also reachable by name, without a table code,
 like `kosis.population.total_fertility_rate` (see the section below).
 
-## Install
+## 1. Install
 
 ```bash
 pip install pykosis
@@ -28,7 +28,7 @@ Get a free API key at <https://kosis.kr/openapi/>. The key is resolved from
 `~/.config/pykosis/credentials.json`, in that order. It is the same name the R `kosis`
 package uses, so a key in `.Renviron` is picked up unchanged.
 
-## Example
+## 2. Example
 
 ```python
 from pykosis import KOSIS, pivot_items
@@ -45,24 +45,24 @@ life_table = pivot_items(data, label="itm_nm")
 ```
 
 `view_code` accepts either the KOSIS code (`"MT_ZTITLE"`) or the short name (`"subject"`) --
-the twelve views are listed in Usage 1 below. Every result is a `list[dict]`, so
+the twelve views are listed in §3.1 below. Every result is a `list[dict]`, so
 `pandas.DataFrame(life_table)` or `polars.DataFrame(life_table)` turns it into a table in one
 line.
 
-## Usage
+## 3. Usage
 
-### 1. `fetch_list` · `search` -- find a table code
+### 3.1 `fetch_list` · `search` -- find a table code
 
-KOSIS identifies a statistic by an organization (`org_id`) and a table (`tbl_id`). If you do
-not know the codes, find them with `search` (keyword) or by browsing the tree with
-`fetch_list`.
+KOSIS identifies a statistic by an **organization (`org_id`)** and a **table (`tbl_id`)**. If
+you do not know the codes, find them two ways:
 
-`search` returns a **page of matching tables**, ranked (20 by default) -- the top hit is not
-necessarily the one you want. Read each `tbl_nm`, pick the `org_id` / `tbl_id` you need, and
-pass it to `fetch_data`.
+- **`search`** -- by keyword. Matching tables come back ranked, several at a time (20 by default).
+- **`fetch_list`** -- by descending the classification tree one level at a time.
+
+The top `search` hit is not necessarily the one you want, so read each `tbl_nm` and pick the code.
 
 ```python
-hits = kosis.search("생명")   # many tables contain "생명" (life / life-insurance)
+hits = kosis.search("생명")   # tables containing "생명" (life / life-insurance), ranked
 # org  tbl               name
 # 367  DT_36701_18_A001  생명보험 가구가입률      <- top hit, but NOT a life table
 # 101  DT_1B41           간이생명표(5세별)
@@ -70,17 +70,22 @@ hits = kosis.search("생명")   # many tables contain "생명" (life / life-insu
 # 101  DT_1B43           사망원인생명표(5세별)
 # ...
 
-# don't just take hits[0] -- pick the org_id/tbl_id you want
-data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
+# fetch with the code you picked from the list above
+data = kosis.fetch_data(
+    org_id="101",      # organization: 101 = Statistics Korea
+    tbl_id="DT_1B42",  # table: DT_1B42 = complete life table
+    obj_l1="ALL",      # classification level 1, all values
+)
 ```
 
-Each hit also carries its classification path (`full_path_id`, e.g. `"F > F_29"`), so you
-can tell categories apart. Narrowing the keyword (`kosis.search("완전생명표")`) floats the
-right table to the top. To browse by classification instead of searching, descend the tree:
+- Each hit also carries its classification path (`full_path_id`, e.g. `"F > F_29"`), so you can tell categories apart.
+- Narrowing the keyword (`kosis.search("완전생명표")`) floats the right table to the top.
+
+To browse by classification instead, descend the tree one level at a time:
 
 ```python
-kosis.fetch_list(view_code="MT_ZTITLE")                         # top level
-kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # one level down (life tables)
+kosis.fetch_list(view_code="MT_ZTITLE")                         # top level (by subject)
+kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # one level down (F_29 = life tables)
 ```
 
 `view_code` is one of twelve classification views. The Service View Code (`"MT_ZTITLE"`)
@@ -103,7 +108,7 @@ takes either, while the `kosis` command and the plugin skills take the short nam
 | `MT_TM2_TITLE` | statistics by issue | `by_issue` |
 | `MT_ETITLE` | English KOSIS | `english` |
 
-### 2. `fetch_data` -- fetch a table
+### 3.2 `fetch_data` -- fetch a table
 
 - Download data by `org_id` + `tbl_id`.
 - A table's classification axes vary, so it takes `obj_l1`..`obj_l8`. Only `obj_l1="ALL"`
@@ -127,7 +132,7 @@ Set the window with `start_period` / `end_period` (omit for the most recent 3), 
 frequency with `frequency` (see the table below). A single call returns up to 40,000 cells,
 so narrow the window or classification for large tables.
 
-### 3. `pivot_items` -- items to columns
+### 3.3 `pivot_items` -- items to columns
 
 - Spread a table's items from rows into columns. The default label is the item name
   (`itm_nm`).
@@ -137,7 +142,7 @@ pivot_items(data)                     # itm_nm (default)
 pivot_items(data, label="itm_id")     # by item code
 ```
 
-### 4. `fetch_explanation` · `fetch_meta` -- documentation and metadata
+### 3.4 `fetch_explanation` · `fetch_meta` -- documentation and metadata
 
 - `fetch_explanation` returns the survey documentation (purpose, legal basis, cycle, terms).
 - `fetch_meta` returns a table's structural metadata. Pick a slice with `meta_type` --
@@ -145,34 +150,48 @@ pivot_items(data, label="itm_id")     # by item code
   `CMMT` (annotations). Either the code (`"ITM"`) or the friendly name (`"item"`) works.
 
 ```python
-kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")
-kosis.fetch_meta(org_id="101", tbl_id="DT_1B42", meta_type="ITM")
+kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")             # survey docs for the complete life table (101/DT_1B42)
+kosis.fetch_meta(org_id="101", tbl_id="DT_1B42", meta_type="ITM")   # its items & classifications (ITM)
 ```
 
-### 5. `fetch_indicator` -- key-indicator documentation
+### 3.5 `fetch_indicator` -- key-indicator documentation
 
 ```python
-kosis.fetch_indicator("160")   # a key indicator's concept, method, and source by number
+kosis.fetch_indicator("160")   # indicator 160 = total fertility rate (concept, method, source)
 ```
 
-## Headline indicators by name (top 100)
+## 4. Curated indicators (top 100)
 
-Without memorizing a table code, reach the **top-100 KOSIS indicators** as
-`kosis.<group>.<indicator>.fetch()`. In an editor, tab through `kosis.` with the dot to find
-them by autocomplete.
+Reach the top-100 KOSIS indicators by name as `kosis.<group>.<indicator>.fetch()` -- no
+table code, and editor autocomplete finds them.
 
 ```python
-kosis.population.total_fertility_rate.fetch()          # total fertility rate
-kosis.income_consumption.consumer_price_index.fetch()  # consumer price index
-kosis.health_welfare.life_expectancy.fetch()           # life expectancy
+kosis.population.total_fertility_rate.fetch()   # total fertility rate
+kosis.income_consumption.cpi.fetch()            # consumer price index
+kosis.health_welfare.life_expectancy.fetch()    # life expectancy
 ```
 
-Set a window with `.fetch(start_period=, end_period=)`; omit it for the most recent 3. Each
-indicator returns its whole source table, so filter it for the rows you want.
+- `.fetch(start_period=, end_period=)` sets a window; omit it for the most recent 3.
+- Each indicator returns its **whole** source table -- filter it for the rows you want.
 
-In the tree below, **a line ending in `/` is a group** and **a line without `/` is an actual
-indicator**. Join the dots to call one -- e.g. `total_fertility_rate` under `population/` is
-`kosis.population.total_fertility_rate`.
+The indicators are grouped into KOSIS's **ten fields**:
+
+| Group | Field | Count |
+|---|---|---|
+| `population` | Population & households | 15 |
+| `economy` | Economy & business | 14 |
+| `environment_energy` | Environment & energy | 6 |
+| `health_welfare` | Health & welfare | 13 |
+| `education_labor` | Education & labor | 12 |
+| `income_consumption` | Income & consumption | 6 |
+| `leisure` | Leisure & culture | 7 |
+| `housing_transport` | Housing & transport | 9 |
+| `crime_safety` | Crime & safety | 5 |
+| `industry` | Industry, farming & fishing | 13 |
+
+The indicators in each field appear in the tree below. **A line ending in `/` is a field
+(group)**, **a line without `/` is an actual indicator** -- e.g. `total_fertility_rate` under
+`population/` is `kosis.population.total_fertility_rate`.
 
 ```
 kosis
@@ -240,14 +259,14 @@ kosis
 │   ├── job_vacancies                             # Job vacancies
 │   ├── unemployment_rate                         # Unemployment rate
 │   ├── school_students                           # School students
-│   └── private_education_spending                # Private education spending
+│   └── private_education_expenditure             # Private education expenditure
 ├── income_consumption/  # Income & consumption
 │   ├── household_debt                            # Household debt
 │   ├── household_consumption_expenditure         # Household consumption expenditure
 │   ├── median_household_income                   # Median household income
 │   ├── farm_household_income                     # Farm household income
-│   ├── producer_price_index                      # Producer price index
-│   └── consumer_price_index                      # Consumer price index
+│   ├── ppi                                       # PPI
+│   └── cpi                                       # CPI
 ├── leisure/  # Leisure & culture
 │   ├── books_read_per_capita                     # Books read per capita
 │   ├── domestic_travel_rate                      # Domestic travel rate
@@ -259,7 +278,7 @@ kosis
 ├── housing_transport/  # Housing & transport
 │   ├── urban_population_ratio                    # Urban population ratio
 │   ├── housing_construction_permits              # Housing construction permits
-│   ├── house_sale_price_index                    # House sale price index
+│   ├── housing_sales_price_index                 # Housing sales price index
 │   ├── housing_supply_ratio                      # Housing supply ratio
 │   ├── housing_units                             # Housing units
 │   ├── land_price_change_rate                    # Land price change rate
@@ -279,7 +298,7 @@ kosis
     ├── farm_population                           # Farm population
     ├── service_production_index                  # Service production index
     ├── retail_sales                              # Retail sales
-    ├── grain_production                          # Grain production
+    ├── food_crop_production                      # Food crop production
     ├── online_shopping_transaction_value         # Online shopping transaction value
     ├── manufacturing_capacity_utilization_index  # Manufacturing capacity utilization index
     ├── manufacturing_production_index            # Manufacturing production index
@@ -351,13 +370,13 @@ Full list:
 | education_labor | `kosis.education_labor.job_vacancies` | Job vacancies |
 | education_labor | `kosis.education_labor.unemployment_rate` | Unemployment rate |
 | education_labor | `kosis.education_labor.school_students` | School students |
-| education_labor | `kosis.education_labor.private_education_spending` | Private education spending |
+| education_labor | `kosis.education_labor.private_education_expenditure` | Private education expenditure |
 | income_consumption | `kosis.income_consumption.household_debt` | Household debt |
 | income_consumption | `kosis.income_consumption.household_consumption_expenditure` | Household consumption expenditure |
 | income_consumption | `kosis.income_consumption.median_household_income` | Median household income |
 | income_consumption | `kosis.income_consumption.farm_household_income` | Farm household income |
-| income_consumption | `kosis.income_consumption.producer_price_index` | Producer price index |
-| income_consumption | `kosis.income_consumption.consumer_price_index` | Consumer price index |
+| income_consumption | `kosis.income_consumption.ppi` | PPI |
+| income_consumption | `kosis.income_consumption.cpi` | CPI |
 | leisure | `kosis.leisure.books_read_per_capita` | Books read per capita |
 | leisure | `kosis.leisure.domestic_travel_rate` | Domestic travel rate |
 | leisure | `kosis.leisure.libraries` | Libraries |
@@ -367,7 +386,7 @@ Full list:
 | leisure | `kosis.leisure.overseas_travel_rate` | Overseas travel rate |
 | housing_transport | `kosis.housing_transport.urban_population_ratio` | Urban population ratio |
 | housing_transport | `kosis.housing_transport.housing_construction_permits` | Housing construction permits |
-| housing_transport | `kosis.housing_transport.house_sale_price_index` | House sale price index |
+| housing_transport | `kosis.housing_transport.housing_sales_price_index` | Housing sales price index |
 | housing_transport | `kosis.housing_transport.housing_supply_ratio` | Housing supply ratio |
 | housing_transport | `kosis.housing_transport.housing_units` | Housing units |
 | housing_transport | `kosis.housing_transport.land_price_change_rate` | Land price change rate |
@@ -385,7 +404,7 @@ Full list:
 | industry | `kosis.industry.farm_population` | Farm population |
 | industry | `kosis.industry.service_production_index` | Service production index |
 | industry | `kosis.industry.retail_sales` | Retail sales |
-| industry | `kosis.industry.grain_production` | Grain production |
+| industry | `kosis.industry.food_crop_production` | Food crop production |
 | industry | `kosis.industry.online_shopping_transaction_value` | Online shopping transaction value |
 | industry | `kosis.industry.manufacturing_capacity_utilization_index` | Manufacturing capacity utilization index |
 | industry | `kosis.industry.manufacturing_production_index` | Manufacturing production index |
@@ -393,7 +412,7 @@ Full list:
 | industry | `kosis.industry.fishery_production` | Fishery production |
 | industry | `kosis.industry.manufacturing_establishments` | Manufacturing establishments |
 
-## Command line
+## 5. Command line
 
 Installing pykosis also installs the `kosis` command.
 
@@ -408,7 +427,7 @@ kosis indicator 160                           # key-indicator documentation
 
 `--json` prints the full result; `kosis <command> --help` lists the options.
 
-## Use from AI coding agents
+## 6. Use from AI coding agents
 
 This repo doubles as a plugin marketplace for Claude Code and Codex -- it provides
 `search`, `list`, `data`, `meta`, and `explanation` skills, each named after the matching
@@ -439,7 +458,7 @@ skills directory and call it without the `kosis:` prefix (e.g. `/data`).
 ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
 ```
 
-## Frequency
+## 7. Frequency
 
 The value `fetch_data(frequency=)` accepts. Either the word or the code works.
 
@@ -453,7 +472,7 @@ The value `fetch_data(frequency=)` accepts. Either the word or the code works.
 | multi-year | `F` | `multiyear` | `2024` |
 | irregular | `IR` | `irregular` | `2024` |
 
-## Errors
+## 8. Errors
 
 | Exception | When |
 |---|---|
@@ -463,11 +482,13 @@ The value `fetch_data(frequency=)` accepts. Either the word or the code works.
 | `KOSISRateLimitError` | the call-rate limit (HTTP 429) was hit |
 | `KOSISNetworkError` | the network failed after retries |
 
-All subclass `KOSISError`. A query that simply has no data returns an empty list, not an
-error. KOSIS caps calls at 200/min, so when reading many tables in a row, space them with
-`KOSIS(delay_seconds=0.3)` and cache repeated queries with `KOSIS(cache_ttl=600)`; call
-`kosis.clear_cache()` to force fresh results before the TTL expires.
+- Every exception subclasses `KOSISError`.
+- A query that simply has no data returns an empty list, not an error.
+- KOSIS caps calls at 200/min, so when reading many tables in a row, space them with
+  `KOSIS(delay_seconds=0.3)`.
+- Cache repeated queries with `KOSIS(cache_ttl=600)`, and call `kosis.clear_cache()` to force
+  fresh results before the TTL expires.
 
-## License
+## 9. License
 
 MIT © Seokhoon Joo

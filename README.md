@@ -16,7 +16,7 @@ pykosis는 KOSIS Open API의 6개 서비스를 감싸, 통계표를 검색하고
 자주 쓰는 **KOSIS 100대 지표**는 통계표 코드 없이 `kosis.population.total_fertility_rate`처럼
 이름으로도 바로 꺼냅니다(아래 절 참고).
 
-## 설치
+## 1. 설치
 
 ```bash
 pip install pykosis
@@ -26,7 +26,7 @@ pip install pykosis
 환경변수 `KOSIS_API_KEY`, `~/.config/pykosis/credentials.json` 파일 순으로 찾습니다. R `kosis`
 패키지와 이름이 같아 `.Renviron`에 넣어둔 키도 그대로 잡힙니다.
 
-## 예제
+## 2. 예제
 
 ```python
 from pykosis import KOSIS, pivot_items
@@ -43,21 +43,23 @@ life_table = pivot_items(data, label="itm_nm")
 ```
 
 `view_code`에는 KOSIS 코드(`"MT_ZTITLE"`)도 짧은 이름(`"subject"`)도 쓸 수 있습니다(12가지 뷰는
-사용법 1의 표). 반환은 `dict`의 목록이라, `pandas.DataFrame(life_table)`·`polars.DataFrame(life_table)`으로
+§3.1의 표). 반환은 `dict`의 목록이라, `pandas.DataFrame(life_table)`·`polars.DataFrame(life_table)`으로
 바로 바꿉니다.
 
-## 사용법
+## 3. 사용법
 
-### 1. `fetch_list` · `search` — 통계표 코드 찾기
+### 3.1 `fetch_list` · `search` — 통계표 코드 찾기
 
-KOSIS는 통계를 기관(`org_id`)과 통계표(`tbl_id`)로 식별합니다. 코드를 모르면 `search`로
-키워드 검색하거나 `fetch_list`로 분류 트리를 훑어 찾습니다.
+KOSIS는 통계를 **기관(`org_id`)** 과 **통계표(`tbl_id`)** 로 식별합니다. 코드를 모르면 두 가지로
+찾습니다.
 
-`search`는 키워드가 든 통계표를 **순위대로 여러 개** 돌려줍니다 — 맨 위가 꼭 원하는 표는
-아닙니다. 표 이름(`tbl_nm`)을 보고 원하는 `org_id`·`tbl_id`를 골라 `fetch_data`에 넘기세요.
+- **`search`** — 키워드로 찾습니다. 키워드가 든 표가 **순위대로 여러 개** 나옵니다.
+- **`fetch_list`** — 분류 트리를 한 단계씩 내려가며 찾습니다.
+
+`search`는 맨 위가 꼭 원하는 표는 아니니, 표 이름(`tbl_nm`)을 보고 원하는 코드를 고릅니다.
 
 ```python
-hits = kosis.search("생명")   # '생명'이 든 표가 순위대로 여러 개 나온다
+hits = kosis.search("생명")   # '생명'이 든 표를 순위대로 (여러 개)
 # org  tbl               name
 # 367  DT_36701_18_A001  생명보험 가구가입률      <- 맨 위지만 생명표가 아님
 # 101  DT_1B41           간이생명표(5세별)
@@ -65,17 +67,22 @@ hits = kosis.search("생명")   # '생명'이 든 표가 순위대로 여러 개
 # 101  DT_1B43           사망원인생명표(5세별)
 # ...
 
-# hits[0] 를 그냥 쓰지 말고, 원하는 org_id·tbl_id 를 골라서 넘긴다
-data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
+# 위 목록에서 고른 코드로 데이터를 가져온다
+data = kosis.fetch_data(
+    org_id="101",      # 기관: 101 = 통계청
+    tbl_id="DT_1B42",  # 통계표: DT_1B42 = 완전생명표
+    obj_l1="ALL",      # 분류 1레벨 전체
+)
 ```
 
-검색 결과의 각 행에는 분류 경로(`full_path_id`, 예: `"F > F_29"`)도 담겨 있어 분류를 구분할 수
-있습니다. 키워드를 좁히면(`kosis.search("완전생명표")`) 원하는 표가 상위에 바로 뜹니다. 코드를
-모르고 분류부터 훑고 싶으면 `fetch_list`로 트리를 내려갑니다.
+- 각 행에는 분류 경로(`full_path_id`, 예: `"F > F_29"`)도 담겨 있어 분류를 구분할 수 있습니다.
+- 키워드를 좁히면(`kosis.search("완전생명표")`) 원하는 표가 상위에 바로 뜹니다.
+
+코드를 모르고 분류부터 훑고 싶으면 `fetch_list`로 트리를 한 단계씩 내려갑니다.
 
 ```python
-kosis.fetch_list(view_code="MT_ZTITLE")                         # 최상위 분류
-kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # 그 아래 (생명표류)
+kosis.fetch_list(view_code="MT_ZTITLE")                         # 최상위 분류 (주제별)
+kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # 그 아래 목록 (F_29 = 생명표)
 ```
 
 `view_code`는 통계표를 분류하는 12가지 뷰 중 하나입니다. Service View Code(`"MT_ZTITLE"`)는
@@ -97,7 +104,7 @@ kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # 그 아래 (�
 | `MT_TM2_TITLE` | 이슈별통계 | `by_issue` |
 | `MT_ETITLE` | 영문 KOSIS | `english` |
 
-### 2. `fetch_data` — 통계자료 가져오기
+### 3.2 `fetch_data` — 통계자료 가져오기
 
 - `org_id`·`tbl_id`로 데이터를 내려받습니다.
 - 통계표마다 분류축이 달라 `obj_l1`~`obj_l8`을 씁니다. 기본은 `obj_l1="ALL"` 하나만 켜져 있습니다.
@@ -118,7 +125,7 @@ kosis.fetch_data(org_id="117", tbl_id="DT_117N_A00124", obj_l2="ALL", obj_l3="AL
 기간은 `start_period`·`end_period`(생략하면 최근 3개), 주기는 `frequency`로 정합니다(아래 표).
 한 번에 40,000셀까지이므로, 큰 표는 기간이나 분류를 좁혀 부릅니다.
 
-### 3. `pivot_items` — 항목을 열로
+### 3.3 `pivot_items` — 항목을 열로
 
 - 세로로 긴 데이터에서 항목을 가로 열로 펼칩니다. 기본은 항목명(`itm_nm`).
 
@@ -127,40 +134,54 @@ pivot_items(data)                     # itm_nm (기본)
 pivot_items(data, label="itm_id")     # 항목코드로
 ```
 
-### 4. `fetch_explanation` · `fetch_meta` — 설명과 메타데이터
+### 3.4 `fetch_explanation` · `fetch_meta` — 설명과 메타데이터
 
 - `fetch_explanation`은 통계조사 설명(목적·법적근거·주기·용어)을 줍니다.
 - `fetch_meta`는 통계표 정보를 줍니다. `meta_type`으로 골라 봅니다 — `TBL`(표명)·`ORG`(기관)·
   `PRD`(수록기간)·`ITM`(항목·분류)·`CMMT`(주석). 코드(`"ITM"`)도 짧은 이름(`"item"`)도 됩니다.
 
 ```python
-kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")
-kosis.fetch_meta(org_id="101", tbl_id="DT_1B42", meta_type="ITM")
+kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")             # 완전생명표(101/DT_1B42) 조사 설명
+kosis.fetch_meta(org_id="101", tbl_id="DT_1B42", meta_type="ITM")   # 그 표의 항목·분류(ITM)
 ```
 
-### 5. `fetch_indicator` — 통계주요지표 설명
+### 3.5 `fetch_indicator` — 통계주요지표 설명
 
 ```python
-kosis.fetch_indicator("160")   # 지표 번호로 개념·산정방법·출처
+kosis.fetch_indicator("160")   # 지표번호 160 = 합계출산율 (개념·산정방법·출처)
 ```
 
-## 이름으로 꺼내는 100대 지표
+## 4. 큐레이션 지표 (100대 지표)
 
-통계표 코드를 외우지 않고, **KOSIS 100대 지표**를 `kosis.그룹.지표.fetch()` 형태로 바로 꺼냅니다.
+통계표 코드를 외우지 않고, **KOSIS 100대 지표**를 `kosis.그룹.지표.fetch()`로 바로 꺼냅니다.
 편집기에서 `kosis.` 뒤를 점(`.`)으로 타고 들어가면 자동완성으로 찾을 수 있습니다.
 
 ```python
-kosis.population.total_fertility_rate.fetch()          # 합계출산율
-kosis.income_consumption.consumer_price_index.fetch()  # 소비자물가지수
-kosis.health_welfare.life_expectancy.fetch()           # 기대수명
+kosis.population.total_fertility_rate.fetch()   # 합계출산율
+kosis.income_consumption.cpi.fetch()            # 소비자물가지수
+kosis.health_welfare.life_expectancy.fetch()    # 기대수명
 ```
 
-`.fetch(start_period=, end_period=)`로 기간을 정하고, 생략하면 최근 3개를 가져옵니다. 원본 표
-전체를 돌려주니 필요한 행만 골라 씁니다.
+- `.fetch(start_period=, end_period=)`로 기간을 정하고, 생략하면 최근 3개를 가져옵니다.
+- 원본 표 **전체**를 돌려주니, 필요한 행만 골라 씁니다.
 
-아래 트리에서 **끝에 `/`가 붙은 줄은 그룹**이고, **`/`가 없는 줄이 실제 지표**입니다. 지표 줄을
-점으로 이어 부르면 됩니다 — 예: `population/` 안의 `total_fertility_rate` →
-`kosis.population.total_fertility_rate`.
+지표는 KOSIS의 **10개 분야**로 묶여 있습니다.
+
+| 그룹 | 분야 | 지표 수 |
+|---|---|---|
+| `population` | 인구·가구 | 15 |
+| `economy` | 경제·기업 | 14 |
+| `environment_energy` | 환경·에너지 | 6 |
+| `health_welfare` | 보건·복지 | 13 |
+| `education_labor` | 교육·노동 | 12 |
+| `income_consumption` | 소득·소비 | 6 |
+| `leisure` | 여가·문화 | 7 |
+| `housing_transport` | 주거·교통 | 9 |
+| `crime_safety` | 범죄·안전 | 5 |
+| `industry` | 산업·농림·수산 | 13 |
+
+각 분야 안의 지표는 아래 트리에서 봅니다. **끝에 `/`가 붙은 줄은 분야(그룹)**, **`/`가 없는 줄이
+실제 지표**입니다 — 예: `population/`의 `total_fertility_rate` → `kosis.population.total_fertility_rate`.
 
 ```
 kosis
@@ -228,14 +249,14 @@ kosis
 │   ├── job_vacancies                             # 빈일자리
 │   ├── unemployment_rate                         # 실업률
 │   ├── school_students                           # 초중고학생수
-│   └── private_education_spending                # 학생사교육비
+│   └── private_education_expenditure             # 학생사교육비
 ├── income_consumption/  # 소득·소비
 │   ├── household_debt                            # 가구부채
 │   ├── household_consumption_expenditure         # 가구소비지출
 │   ├── median_household_income                   # 가구중위소득
 │   ├── farm_household_income                     # 농가소득
-│   ├── producer_price_index                      # 생산자물가지수
-│   └── consumer_price_index                      # 소비자물가지수
+│   ├── ppi                                       # 생산자물가지수
+│   └── cpi                                       # 소비자물가지수
 ├── leisure/  # 여가·문화
 │   ├── books_read_per_capita                     # 1인당 평균독서권수
 │   ├── domestic_travel_rate                      # 국내여행 경험률
@@ -247,7 +268,7 @@ kosis
 ├── housing_transport/  # 주거·교통
 │   ├── urban_population_ratio                    # 도시지역 인구비율
 │   ├── housing_construction_permits              # 주택건설 인허가수
-│   ├── house_sale_price_index                    # 주택매매가격지수
+│   ├── housing_sales_price_index                 # 주택매매가격지수
 │   ├── housing_supply_ratio                      # 주택보급률
 │   ├── housing_units                             # 주택수
 │   ├── land_price_change_rate                    # 지가변동률
@@ -267,7 +288,7 @@ kosis
     ├── farm_population                           # 농가인구
     ├── service_production_index                  # 서비스업생산지수
     ├── retail_sales                              # 소매판매액
-    ├── grain_production                          # 식량작물 생산량
+    ├── food_crop_production                      # 식량작물 생산량
     ├── online_shopping_transaction_value         # 온라인쇼핑몰 거래액
     ├── manufacturing_capacity_utilization_index  # 제조업 생산능력 및 가동률지수
     ├── manufacturing_production_index            # 제조업생산지수
@@ -339,13 +360,13 @@ kosis
 | education_labor | `kosis.education_labor.job_vacancies` | 빈일자리 |
 | education_labor | `kosis.education_labor.unemployment_rate` | 실업률 |
 | education_labor | `kosis.education_labor.school_students` | 초중고학생수 |
-| education_labor | `kosis.education_labor.private_education_spending` | 학생사교육비 |
+| education_labor | `kosis.education_labor.private_education_expenditure` | 학생사교육비 |
 | income_consumption | `kosis.income_consumption.household_debt` | 가구부채 |
 | income_consumption | `kosis.income_consumption.household_consumption_expenditure` | 가구소비지출 |
 | income_consumption | `kosis.income_consumption.median_household_income` | 가구중위소득 |
 | income_consumption | `kosis.income_consumption.farm_household_income` | 농가소득 |
-| income_consumption | `kosis.income_consumption.producer_price_index` | 생산자물가지수 |
-| income_consumption | `kosis.income_consumption.consumer_price_index` | 소비자물가지수 |
+| income_consumption | `kosis.income_consumption.ppi` | 생산자물가지수 |
+| income_consumption | `kosis.income_consumption.cpi` | 소비자물가지수 |
 | leisure | `kosis.leisure.books_read_per_capita` | 1인당 평균독서권수 |
 | leisure | `kosis.leisure.domestic_travel_rate` | 국내여행 경험률 |
 | leisure | `kosis.leisure.libraries` | 도서관수 |
@@ -355,7 +376,7 @@ kosis
 | leisure | `kosis.leisure.overseas_travel_rate` | 해외여행 경험률 |
 | housing_transport | `kosis.housing_transport.urban_population_ratio` | 도시지역 인구비율 |
 | housing_transport | `kosis.housing_transport.housing_construction_permits` | 주택건설 인허가수 |
-| housing_transport | `kosis.housing_transport.house_sale_price_index` | 주택매매가격지수 |
+| housing_transport | `kosis.housing_transport.housing_sales_price_index` | 주택매매가격지수 |
 | housing_transport | `kosis.housing_transport.housing_supply_ratio` | 주택보급률 |
 | housing_transport | `kosis.housing_transport.housing_units` | 주택수 |
 | housing_transport | `kosis.housing_transport.land_price_change_rate` | 지가변동률 |
@@ -373,7 +394,7 @@ kosis
 | industry | `kosis.industry.farm_population` | 농가인구 |
 | industry | `kosis.industry.service_production_index` | 서비스업생산지수 |
 | industry | `kosis.industry.retail_sales` | 소매판매액 |
-| industry | `kosis.industry.grain_production` | 식량작물 생산량 |
+| industry | `kosis.industry.food_crop_production` | 식량작물 생산량 |
 | industry | `kosis.industry.online_shopping_transaction_value` | 온라인쇼핑몰 거래액 |
 | industry | `kosis.industry.manufacturing_capacity_utilization_index` | 제조업 생산능력 및 가동률지수 |
 | industry | `kosis.industry.manufacturing_production_index` | 제조업생산지수 |
@@ -381,7 +402,7 @@ kosis
 | industry | `kosis.industry.fishery_production` | 어업생산량 |
 | industry | `kosis.industry.manufacturing_establishments` | 제조업 사업체수 |
 
-## 커맨드라인
+## 5. 커맨드라인
 
 설치하면 `kosis` 명령이 함께 깔립니다.
 
@@ -396,7 +417,7 @@ kosis indicator 160                           # 주요지표 설명
 
 `--json`으로 전체 결과를, `kosis <명령> --help`로 옵션을 봅니다.
 
-## AI 코딩 에이전트에서 사용
+## 6. AI 코딩 에이전트에서 사용
 
 이 저장소는 Claude Code·Codex용 플러그인 마켓플레이스도 겸합니다 —
 `search`·`list`·`data`·`meta`·`explanation` 스킬을 제공합니다(각각 같은 이름의 `kosis` 명령에
@@ -426,7 +447,7 @@ codex plugin add kosis@pykosis
 ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
 ```
 
-## 수록 주기 (frequency)
+## 7. 수록 주기 (frequency)
 
 `fetch_data(frequency=)`가 받는 값입니다. 단어·코드 어느 쪽이든 됩니다.
 
@@ -440,7 +461,7 @@ ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
 | 다년 | `F` | `multiyear` | `2024` |
 | 부정기 | `IR` | `irregular` | `2024` |
 
-## 오류
+## 8. 오류
 
 | 예외 | 언제 |
 |---|---|
@@ -450,10 +471,12 @@ ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
 | `KOSISRateLimitError` | 호출 속도 제한(HTTP 429)에 걸렸을 때 |
 | `KOSISNetworkError` | 네트워크가 끝내 안 됐을 때 |
 
-모두 `KOSISError`의 하위입니다. 자료가 없을 뿐이면 오류가 아니라 빈 목록으로 옵니다. 분당 200회
-제한이라, 여러 표를 잇달아 읽을 때는 `KOSIS(delay_seconds=0.3)`으로 간격을, `KOSIS(cache_ttl=600)`
-으로 같은 질의를 캐시할 수 있습니다. TTL 전에 새로 받아야 하면 `kosis.clear_cache()`로 비웁니다.
+- 모든 예외는 `KOSISError`의 하위입니다.
+- 자료가 없을 뿐이면 오류가 아니라 빈 목록으로 옵니다.
+- 분당 200회 제한이라, 여러 표를 잇달아 읽을 때는 `KOSIS(delay_seconds=0.3)`으로 간격을 둡니다.
+- 같은 질의는 `KOSIS(cache_ttl=600)`으로 캐시하고, TTL 전에 새로 받아야 하면 `kosis.clear_cache()`로
+  비웁니다.
 
-## 라이선스
+## 9. 라이선스
 
 MIT © Seokhoon Joo
