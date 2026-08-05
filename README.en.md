@@ -82,9 +82,10 @@ KOSIS identifies a statistic by an **organization (`org_id`)** and a **table (`t
 If you do not know the codes, find them with `search` (keyword) or `fetch_list` (the
 classification tree).
 
-**`search` -- by keyword.** Matching tables come back ranked, several at a time (20 by
-default). The top hit is not necessarily the one you want, so read each `tbl_nm` and pick
-the `org_id` / `tbl_id`.
+#### 3.1.1 `search` -- by keyword
+
+Matching tables come back ranked, several at a time (20 by default). The top hit is not
+necessarily the one you want, so read each `tbl_nm` and pick the `org_id` / `tbl_id`.
 
 ```python
 hits = kosis.search("생명")   # tables containing "생명" (life / life-insurance), ranked
@@ -101,18 +102,22 @@ hits = kosis.search("생명")   # tables containing "생명" (life / life-insura
 
 Pass the `org_id` / `tbl_id` you picked to `fetch_data` (§3.2) to fetch the data.
 
-**`fetch_list` -- by classification tree.** When you would rather browse than search,
-descend the tree one level at a time.
+#### 3.1.2 `fetch_list` -- by classification tree
+
+When you would rather browse than search, descend the tree one level at a time.
 
 ```python
 kosis.fetch_list(view_code="MT_ZTITLE")                         # top level (by subject)
 kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # one level down (F_29 = life tables)
 ```
 
-`view_code` is one of twelve classification views. The Service View Code (`"MT_ZTITLE"`)
-works in the function only; the short name (`"subject"`) works everywhere -- the function
-takes either, while the `kosis` command and the plugin skills take the short name
-(`--view subject`).
+#### 3.1.3 `view_code` -- the twelve classification views
+
+`fetch_list`'s `view_code` is one of the twelve views below. The KOSIS **code**
+(`"MT_ZTITLE"`) is hard to remember, so a readable **alias** (`"subject"`) works too.
+
+- **In the function** `view_code=` -- either the code or the alias.
+- **The `kosis` command and plugin skills** -- the alias only (`--view subject`).
 
 | Service View Code | Service View Name | Function/CLI/SKILL |
 |---|---|---|
@@ -179,7 +184,7 @@ pivot_items(data, label="itm_id")     # by item code
 - `fetch_explanation` returns the survey documentation (purpose, legal basis, cycle, terms).
 - `fetch_meta` returns a table's structural metadata. Pick a slice with `meta_type` --
   `TBL` (name), `ORG` (organization), `PRD` (periods), `ITM` (items and classifications),
-  `CMMT` (annotations). Either the code (`"ITM"`) or the friendly name (`"item"`) works.
+  `CMMT` (annotations). Either the code (`"ITM"`) or the alias (`"item"`) works.
 
 ```python
 kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")             # survey docs for the complete life table (101/DT_1B42)
