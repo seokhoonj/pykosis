@@ -52,7 +52,8 @@ from pykosis import KOSIS, pivot_items
 
 kosis = KOSIS()
 
-kosis.search("생명표")   # 1) 키워드로 통계표 코드 찾기 → 완전생명표 = 101 / DT_1B42
+# 1) 키워드로 통계표 코드 찾기 → 완전생명표 = 101 / DT_1B42
+kosis.search("생명표")
 
 # 2) 고른 코드로 통계자료 가져오기 (완전생명표)
 data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
@@ -61,8 +62,13 @@ data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 life_table = pivot_items(data, label="itm_nm")
 ```
 
-반환은 `dict`의 목록이라, `pandas.DataFrame(life_table)`·`polars.DataFrame(life_table)`으로 바로
-바꿉니다.
+반환은 `dict`의 목록이라, 표(DataFrame)로 한 줄에 바꿉니다(pandas는 필수가 아닙니다).
+
+```python
+import pandas as pd
+
+pd.DataFrame(life_table)   # 또는 polars.DataFrame(life_table)
+```
 
 ## 3. 사용법
 
@@ -465,11 +471,11 @@ codex plugin add kosis@pykosis
 플러그인으로 설치하지 않고 쓰려면, 스킬을 각 에이전트의 스킬 디렉터리에 symlink합니다.
 
 ```sh
-ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data   # Claude Code
-ln -s "$PWD/plugins/kosis/skills/data" ~/.codex/skills/data    # Codex
+ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data   # Claude Code → /data
+ln -s "$PWD/plugins/kosis/skills/data" ~/.codex/skills/data    # Codex → $kosis:data
 ```
 
-그러면 다음 턴부터 접두사(`kosis:`) 없이 인식됩니다.
+Claude Code는 바로 인식하고, Codex는 재시작해야 로딩됩니다.
 
 ## 7. 수록 주기 (frequency)
 

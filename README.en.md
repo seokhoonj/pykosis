@@ -55,7 +55,8 @@ from pykosis import KOSIS, pivot_items
 
 kosis = KOSIS()
 
-kosis.search("생명표")   # 1) find the table code by keyword -> complete life table = 101 / DT_1B42
+# 1) find the table code by keyword -> complete life table = 101 / DT_1B42
+kosis.search("생명표")
 
 # 2) fetch that table's data (the complete life table)
 data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
@@ -64,8 +65,13 @@ data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 life_table = pivot_items(data, label="itm_nm")
 ```
 
-Every result is a `list[dict]`, so `pandas.DataFrame(life_table)` or
-`polars.DataFrame(life_table)` turns it into a table in one line.
+Every result is a `list[dict]`, so it becomes a DataFrame in one line (pandas is not required).
+
+```python
+import pandas as pd
+
+pd.DataFrame(life_table)   # or polars.DataFrame(life_table)
+```
 
 ## 3. Usage
 
@@ -479,11 +485,11 @@ codex plugin add kosis@pykosis
 To use a skill without installing the plugin, symlink it into the agent's skills directory.
 
 ```sh
-ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data   # Claude Code
-ln -s "$PWD/plugins/kosis/skills/data" ~/.codex/skills/data    # Codex
+ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data   # Claude Code -> /data
+ln -s "$PWD/plugins/kosis/skills/data" ~/.codex/skills/data    # Codex -> $kosis:data
 ```
 
-It is then picked up on the next turn, without the `kosis:` prefix.
+Claude Code picks it up immediately; Codex needs a restart to load it.
 
 ## 7. Frequency
 
