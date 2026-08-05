@@ -45,7 +45,8 @@ Options (`kosis data --help` is the source of truth):
 ## Procedure
 
 1. **Get the codes.** You need an `org_id` and a `tbl_id`. If the user gave a concept
-   ("생명표", "주민등록인구") but no codes, use the **find** skill first, then come back here.
+   ("생명표", "주민등록인구") but no codes, use the **search** (or **list**) skill first, then
+   come back here.
 2. **Run.** Add `--start`/`--end`/`--frequency` for the window and frequency, `--pivot` to lay
    items out as columns, and `--json` when the user wants the whole result.
    ```bash
@@ -64,5 +65,6 @@ Options (`kosis data --help` is the source of truth):
 ## What this skill does not do
 
 - It does not re-implement fetching or parsing (the package does); it always calls the CLI.
-- It is the observation data only -- to discover org and table codes, use the **find**
-  skill; for a table's metadata or survey documentation, use **meta**.
+- It is the observation data only -- to discover org and table codes, use **search** or
+  **list**; for a table's metadata use **meta**, and for its survey documentation
+  **explanation**.

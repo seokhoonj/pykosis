@@ -1,14 +1,15 @@
 ---
 name: meta
-description: "Read a KOSIS table's metadata and its survey documentation. Holds no logic of its own -- it calls the pykosis package's CLI (`kosis meta` / `kosis explanation`) and shows the result to the user. Use to understand a table's items, units, and source, or a survey's purpose and method. Trigger phrases: KOSIS 메타데이터, 통계표 설명, 통계조사 설명, KOSIS table metadata, KOSIS survey documentation, what does this table contain, 통계 용어 설명."
+description: "Read a KOSIS table's structural metadata -- its items, classifications, units, source, and recorded periods. Holds no logic of its own -- it calls the pykosis package's CLI (`kosis meta`) and shows the result to the user. Trigger phrases: KOSIS 메타데이터, 통계표 설명, 통계표 항목, 단위 출처, KOSIS table metadata, what items does this table have, KOSIS table units and source."
 ---
 
-# kosis -- metadata and documentation
+# kosis -- table metadata
 
-Explain a KOSIS table rather than fetch its numbers. Two reads: `meta` returns a table's
-structural metadata (name, items, units, source, periods), and `explanation` returns the survey's
-documentation (purpose, legal basis, cycle, key terms). Both live in the pykosis package
-(on PyPI); this skill is a thin wrapper that calls its CLI and relays the result.
+Describe how a KOSIS table is built rather than fetch its numbers: its name, items,
+classifications, units, source, and recorded periods. The metadata and parsing live in the
+pykosis package (on PyPI); this skill is a thin wrapper that calls its CLI and relays the
+result. For the survey documentation behind a table (purpose, legal basis, terms), use the
+**explanation** skill.
 
 ## Prerequisite
 
@@ -27,34 +28,29 @@ The key can also be stored in `~/.config/pykosis/credentials.json` as
 
 ```
 kosis meta <ORG_ID> <TBL_ID> [--type table|item|period|unit|source|comment|weight|update|organization] [--json]
-kosis explanation [--org ORG_ID --tbl TBL_ID | --stat-id STAT_ID] [--meta-item ITEM] [--json]
 ```
 
 - `kosis meta` returns one slice of a table's metadata; `--type item` lists its
   classifications and items, `--type unit` its units, `--type source` its source, and so
   on (default `table`).
-- `kosis explanation` returns the survey documentation behind a table -- identify it by
-  `--org`+`--tbl`, or by `--stat-id`. `--meta-item` narrows to one field (default `ALL`).
-- `--json` emits the full records; the text view is aligned columns (meta) or
-  `field: value` blocks (explanation).
+- `--json` emits the full records; the text view shows aligned columns.
 
 ## Procedure
 
-1. **Get the codes.** You need an `org_id` + `tbl_id` (or a `stat_id` for `explanation`). If the
-   user gave a concept but no codes, use the **find** skill first.
-2. **Pick the read.** Use `meta` for structure (what items/units/classifications a table
-   has), `explanation` for documentation (why and how the survey is conducted).
+1. **Get the codes.** You need an `org_id` + `tbl_id`. If the user gave a concept but no
+   codes, use the **search** (or **list**) skill first.
+2. **Pick the slice.** Choose `--type` for what the user asked (items, units, source, ...).
    ```bash
    kosis meta 101 DT_1B42 --type item
-   kosis explanation --org 101 --tbl DT_1B42
    ```
 3. **Relay the result.** Show the CLI's stdout. If the user asked about one field, point
-   out that row or block.
+   out that row.
 4. **Error handling.** Relay the one-line `kosis: <message>` from stderr as-is -- the same
    key and install errors as the other kosis skills apply.
 
 ## What this skill does not do
 
 - It does not re-implement fetching or parsing (the package does); it always calls the CLI.
-- It explains a table -- to fetch its observations, use the **data** skill; to discover org
-  and table codes, use **find**.
+- It reads a table's structure only -- for the survey documentation, use the **explanation**
+  skill; to fetch its observations, use **data**; to discover org and table codes, use
+  **search** or **list**.
