@@ -1,0 +1,27 @@
+{
+  "name": "pykosis",
+  "owner": {
+    "name": "seokhoonj"
+  },
+  "description": "Read KOSIS (Statistics Korea) national statistics",
+  "plugins": [
+    {
+      "name": "kosis",
+      "displayName": "kosis",
+      "source": "./plugins/kosis",
+      "description": "Read KOSIS (Statistics Korea) national statistics",
+      "author": {
+        "name": "seokhoonj"
+      },
+      "homepage": "https://github.com/seokhoonj/pykosis",
+      "category": "Productivity",
+      "keywords": [
+        "kosis",
+        "statistics korea",
+        "korea",
+        "official statistics",
+        "census"
+      ]
+    }
+  ]
+}

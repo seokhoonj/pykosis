@@ -1,0 +1,101 @@
+path	group	name_en	name_ko	org_id	tbl_id	frequency	obj_levels
+population.single_person_households	population	single_person_households	1인가구	101	DT_1PL1502	annual	
+population.elderly_population	population	elderly_population	고령인구	101	DT_1BPA003	annual	
+population.internal_migrants	population	internal_migrants	국내인구 이동자수	101	DT_1B26003_A01	annual	
+population.aging_index	population	aging_index	노령화지수	101	DT_1BPA002	annual	
+population.multicultural_households	population	multicultural_households	다문화가구	101	DT_1JD1501	annual	
+population.registered_foreigners	population	registered_foreigners	외국인등록인구	111	DT_1B040A10	annual	
+population.projected_population	population	projected_population	인구(장래인구추계)	101	DT_1BPA002	annual	
+population.population_density	population	population_density	인구밀도	101	DT_1B08024	annual	
+population.resident_registered_households	population	resident_registered_households	주민등록세대수	101	DT_1B040B3	monthly	
+population.resident_registered_population	population	resident_registered_population	주민등록인구	101	DT_1B040A3	monthly	
+population.births	population	births	출생아수	101	DT_1B8000F	annual	
+population.total_fertility_rate	population	total_fertility_rate	합계출산율	101	DT_1B8000H	annual	
+population.marriages	population	marriages	혼인건수	101	DT_1B8000F	annual	
+health_welfare.infectious_disease_cases	health_welfare	infectious_disease_cases	감염병발생건수	177	DT_117052_A001	annual	
+health_welfare.basic_livelihood_recipients	health_welfare	basic_livelihood_recipients	국민기초생활보장수급자수	117	DT_11714_N001	annual	
+health_welfare.life_expectancy	health_welfare	life_expectancy	기대수명	101	DT_1B41	annual	
+health_welfare.obesity_rate	health_welfare	obesity_rate	비만율	177	DT_11702_N101	annual	
+health_welfare.cancer_cases	health_welfare	cancer_cases	암발생자수	117	DT_117N_A00023	annual	
+health_welfare.daycare_centers	health_welfare	daycare_centers	어린이집수	112	DT_15407_NN001	annual	
+health_welfare.drinking_rate	health_welfare	drinking_rate	음주율	177	DT_11702_N012	annual	
+health_welfare.medical_institutions	health_welfare	medical_institutions	의료기관수	354	DT_MIRE01	monthly	
+health_welfare.medical_personnel	health_welfare	medical_personnel	의료인력수	354	DT_HIRA4T	monthly	
+health_welfare.suicide_rate	health_welfare	suicide_rate	자살률	101	DT_1B34E01	annual	
+health_welfare.persons_with_disabilities	health_welfare	persons_with_disabilities	장애인인구	117	DT_11761_N005	annual	
+health_welfare.average_height	health_welfare	average_height	평균신장	350	DT_35007_N130	annual	
+education_labor.career_interrupted_women	education_labor	career_interrupted_women	경력단절여성	101	DT_1ES4H06S	annual	
+education_labor.economically_active_population	education_labor	economically_active_population	경제활동인구	101	DT_1DA7001S	monthly	
+education_labor.employment_rate	education_labor	employment_rate	고용률	101	DT_1DA7001S	monthly	
+education_labor.working_hours	education_labor	working_hours	근로시간	118	DT_118N_MON054	monthly	
+education_labor.wages	education_labor	wages	근로임금	118	DT_118N_MON054	monthly	
+education_labor.labor_productivity_index	education_labor	labor_productivity_index	노동생산성지수	344	DT_344N_1D8A_AA	quarterly	
+education_labor.universities	education_labor	universities	대학교 수	334	DT_1963003_013	annual	
+education_labor.dual_income_households	education_labor	dual_income_households	맞벌이가구	101	DT_1ES4F09S	annual	
+education_labor.job_vacancies	education_labor	job_vacancies	빈일자리	118	DT_118N_MON066	monthly	
+education_labor.unemployment_rate	education_labor	unemployment_rate	실업률	101	DT_1DA7001S	monthly	
+education_labor.school_students	education_labor	school_students	초중고학생수	334	DT_1963003_004	annual	
+education_labor.private_education_spending	education_labor	private_education_spending	학생사교육비	101	DT_1PE003	annual	
+income_consumption.household_debt	income_consumption	household_debt	가구부채	101	DT_1HDAAA01	annual	
+income_consumption.household_consumption_expenditure	income_consumption	household_consumption_expenditure	가구소비지출	101	DT_1L9U101	quarterly	
+income_consumption.median_household_income	income_consumption	median_household_income	가구중위소득	101	DT_1HDALF05	annual	
+income_consumption.farm_household_income	income_consumption	farm_household_income	농가소득	101	DT_1EA1501	annual	
+income_consumption.producer_price_index	income_consumption	producer_price_index	생산자물가지수	301	DT_404Y014	monthly	
+income_consumption.consumer_price_index	income_consumption	consumer_price_index	소비자물가지수	101	DT_1J22001	monthly	
+leisure.books_read_per_capita	leisure	books_read_per_capita	1인당 평균독서권수	101	DT_1SSCL020R	multiyear	
+leisure.domestic_travel_rate	leisure	domestic_travel_rate	국내여행 경험률	101	DT_1SSCL050R	multiyear	
+leisure.libraries	leisure	libraries	도서관수	113	DT_113_STBL_1028308	annual	
+leisure.arts_attendance_rate	leisure	arts_attendance_rate	문화예술행사 관람률	113	DT_113_STBL_1013509	annual	
+leisure.smartphone_overdependence_rate	leisure	smartphone_overdependence_rate	스마트폰 과의존 위험군	127	DT_120019N_2016_001	annual	
+leisure.inbound_tourists	leisure	inbound_tourists	외래관광객수	314	DT_TRD_TGT_ENT_AGG_MONTH	monthly	
+leisure.overseas_travel_rate	leisure	overseas_travel_rate	해외여행 경험률	101	DT_1SSCL060R	multiyear	
+housing_transport.urban_population_ratio	housing_transport	urban_population_ratio	도시지역 인구비율	460	TX_315_2009_H1001	annual	
+housing_transport.housing_construction_permits	housing_transport	housing_construction_permits	주택건설 인허가수	116	DT_MLTM_1952	monthly	
+housing_transport.house_sale_price_index	housing_transport	house_sale_price_index	주택매매가격지수	408	DT_30404_A012	monthly	
+housing_transport.housing_supply_ratio	housing_transport	housing_supply_ratio	주택보급률	116	DT_MLTM_2100	annual	
+housing_transport.housing_units	housing_transport	housing_units	주택수	101	DT_1JU1501	annual	
+housing_transport.land_price_change_rate	housing_transport	land_price_change_rate	지가변동률	408	DT_PLCAHTUSE	monthly	
+crime_safety.traffic_accident_deaths	crime_safety	traffic_accident_deaths	교통사고 사망자수	132	DT_V_MOTA_011	annual	
+crime_safety.crime_cases	crime_safety	crime_cases	범죄발생건수	132	DT_132004_A001	annual	
+crime_safety.industrial_accident_victims	crime_safety	industrial_accident_victims	산업재해자수	118	DT_11806_N000	annual	
+crime_safety.child_abuse_cases	crime_safety	child_abuse_cases	아동학대건수	117	DT_117064_A009	annual	
+crime_safety.earthquake_frequency	crime_safety	earthquake_frequency	지진발생빈도	141	TX_14101_A001	annual	
+economy.composite_economic_index	economy	composite_economic_index	경기종합지수	101	DT_1C8015	monthly	
+economy.gdp_growth_rate	economy	gdp_growth_rate	경제성장률	301	DT_200Y102	quarterly	
+economy.gdp	economy	gdp	국내총생산(GDP)	301	DT_200Y105	quarterly	
+economy.equipment_investment_index	economy	equipment_investment_index	설비투자지수	101	DT_1F70011	monthly	
+economy.consumer_sentiment_index	economy	consumer_sentiment_index	소비자심리지수	301	DT_511Y002	monthly	
+economy.exports	economy	exports	수출액	360	DT_1R11001_FRM101	monthly	
+economy.bank_lending_rate	economy	bank_lending_rate	예금은행 대출금리	301	DT_121Y006	monthly	
+economy.all_industry_production_index	economy	all_industry_production_index	전산업생산지수	101	DT_1JH20201	monthly	
+economy.sme_count	economy	sme_count	중소기업수	142	DT_BR_A001	annual	
+economy.grdp	economy	grdp	지역내총생산(GRDP)	101	DT_1C91	annual	
+economy.startups	economy	startups	창업기업수	142	DT_142N_G201	monthly	
+economy.kospi	economy	kospi	코스피지수(KOSPI)	343	DT_343_2010_S0027	monthly	
+economy.consolidated_fiscal_balance	economy	consolidated_fiscal_balance	통합재정수지	184	DT_102N_AD01	annual	
+industry.rice_consumption_per_capita	industry	rice_consumption_per_capita	1인당쌀소비량	101	DT_1ED0001	annual	
+industry.cultivated_area	industry	cultivated_area	경지면적	101	DT_1EB001	annual	
+industry.return_to_farming_population	industry	return_to_farming_population	귀농인구	101	DT_1A02003	annual	
+industry.farm_population	industry	farm_population	농가인구	101	DT_1EA1011	annual	
+industry.service_production_index	industry	service_production_index	서비스업생산지수	101	DT_1KC2020	monthly	
+industry.retail_sales	industry	retail_sales	소매판매액	101	DT_1K41002	monthly	
+industry.grain_production	industry	grain_production	식량작물 생산량	101	DT_1ET0021	annual	
+industry.online_shopping_transaction_value	industry	online_shopping_transaction_value	온라인쇼핑몰 거래액	101	DT_1KE10041	monthly	
+industry.manufacturing_capacity_utilization_index	industry	manufacturing_capacity_utilization_index	제조업 생산능력 및 가동률지수	101	DT_1F32001	monthly	
+industry.manufacturing_production_index	industry	manufacturing_production_index	제조업생산지수	101	DT_1F02001	monthly	
+environment_energy.electricity_consumption_per_capita	environment_energy	electricity_consumption_per_capita	1인당 전력소비량	388	TX_38803_A026	annual	
+environment_energy.pm10_concentration	environment_energy	pm10_concentration	미세먼지 농도(PM 10)	106	DT_106N_03_0200045	annual	
+environment_energy.power_generation	environment_energy	power_generation	발전실적	388	TX_38803_A014	annual	
+environment_energy.household_waste_generation	environment_energy	household_waste_generation	생활폐기물 발생량	106	DT_106N_29_2020005	annual	
+environment_energy.renewable_energy_production	environment_energy	renewable_energy_production	신·재생에너지생산량	337	DT_337N_A001	annual	
+environment_energy.greenhouse_gas_emissions	environment_energy	greenhouse_gas_emissions	온실가스배출량	106	DT_106N_99_2800020	annual	
+population.households	population	households	가구수	101	DT_1IN1502	annual	00
+population.average_household_size	population	average_household_size	평균 가구원수	101	DT_1JC1516	annual	00|00
+housing_transport.registered_motorcycles	housing_transport	registered_motorcycles	이륜차 신고대수	116	DT_MLTM_5559	monthly	ALL|13102866057B.0001|13102866057C.0001
+housing_transport.registered_vehicles	housing_transport	registered_vehicles	자동차 등록대수	116	DT_MLTM_5498	monthly	ALL|13102873443B.0001|13102873443C.0005
+industry.service_establishments	industry	service_establishments	서비스업 사업체수	101	DT_2KB9001	annual	00|0
+health_welfare.death_rate	health_welfare	death_rate	사망률	101	DT_1B34E13	annual	0|00|0
+economy.business_establishments	economy	business_establishments	사업체수	101	DT_1K52D01	annual	00|ALL|0
+industry.fishery_production	industry	fishery_production	어업생산량	101	DT_1EW0004	annual	0|0|00|0
+industry.manufacturing_establishments	industry	manufacturing_establishments	제조업 사업체수	101	DT_1FS1001_S	annual	00|ALL
+housing_transport.land_area	housing_transport	land_area	국토면적	101	DT_2KAA101	annual	

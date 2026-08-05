@@ -1,0 +1,33 @@
+{
+  "name": "kosis",
+  "version": "0.1.0",
+  "description": "Read KOSIS (Statistics Korea) national statistics from the command line, powered by the pykosis CLI",
+  "author": {
+    "name": "seokhoonj",
+    "url": "https://github.com/seokhoonj"
+  },
+  "homepage": "https://github.com/seokhoonj/pykosis",
+  "repository": "https://github.com/seokhoonj/pykosis",
+  "license": "MIT",
+  "keywords": [
+    "kosis",
+    "statistics korea",
+    "korea",
+    "official statistics",
+    "census"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "kosis",
+    "shortDescription": "Read KOSIS (Statistics Korea) national statistics",
+    "longDescription": "Search the KOSIS statistical-table catalog to find an organization and table code, fetch that table's observations as a time series, or read its metadata and survey documentation from the KOSIS Open API via the pykosis CLI. Needs a free KOSIS API key in KOSIS_API_KEY.",
+    "developerName": "seokhoonj",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": [
+      "Find the KOSIS table code for the life table",
+      "Get a KOSIS statistical table as a time series",
+      "Show the metadata for a KOSIS table"
+    ]
+  }
+}

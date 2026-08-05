@@ -1,0 +1,98 @@
+name: reusable check
+
+# The full check -- tests, lint, types, and the packaging assertions -- factored
+# into one reusable job so both `check.yml` (on push / PR) and the release gate in
+# `publish.yml` run the *identical* thing. One definition is what makes "publish
+# gates on the full check" true; a second hand-maintained copy would drift, and a
+# check added here silently would not gate releases.
+
+on:
+  workflow_call:
+
+# The floor lives on the shared body, not only on `check.yml`: `publish.yml`'s gate
+# calls this same workflow, and if the floor were only on `check.yml` the gate would
+# run this check with the repo-default (possibly write) token. Declared here, the
+# check is read-only from every caller. A reusable workflow can only downscope from
+# the caller, so this never widens anyone's token.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every minor release from the requires-python floor (>=3.11) through the
+        # current stable CPython -- the same set the trove classifiers advertise, so
+        # each is an audit of the other (no version claimed but untested).
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+      - name: Install
+        # A venv per matrix version, not `uv pip --system`: the runner's system
+        # Python is externally managed and is one fixed version whatever the matrix
+        # says. This is also what the README tells a person to run.
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install -e ".[dev]"
+          .venv/bin/python -c "import sys; print('testing on', sys.version)"
+
+      - name: Test
+        run: .venv/bin/pytest -q
+
+      - name: Lint
+        run: .venv/bin/ruff check src tests
+
+      - name: Types
+        run: .venv/bin/mypy src
+
+      - name: Confirm the only runtime dependency is httpx
+        # A bare install must pull in nothing but httpx; a second runtime dependency
+        # creeping into `dependencies` is caught here rather than in a user's
+        # environment.
+        run: |
+          uv venv /tmp/bare --python ${{ matrix.python-version }}
+          uv pip install --python /tmp/bare/bin/python .
+          /tmp/bare/bin/python -c "
+          import re
+          import importlib.metadata as md
+          requires = md.requires('pykosis') or []
+          runtime = [r for r in requires if 'extra ==' not in r]
+          # Each requirement's bare name (before any version/marker/extra), PEP 503
+          # normalized; the runtime set must be exactly httpx.
+          names = sorted(re.split(r'[<>=!~;\[\s]', r, maxsplit=1)[0].replace('_', '-').lower() for r in runtime)
+          assert names == ['httpx'], f'unexpected runtime dependencies: {runtime}'
+          import pykosis
+          print('pykosis imports with only httpx')
+          "
+          # The console script runs, and its top-level --version prints (not shoved
+          # into a required subcommand).
+          /tmp/bare/bin/kosis --version
+
+      - name: Confirm a user's type checker can see the hints
+        # Every hint in this package is invisible to a user unless py.typed ships
+        # alongside it (PEP 561), and the source cannot answer whether it did:
+        # src/pykosis/py.typed can sit in git while the built wheel omits it. So ask
+        # it the way a user does -- install the built package into a clean
+        # environment and run their checker over their code.
+        run: |
+          uv venv /tmp/typed --python ${{ matrix.python-version }}
+          uv pip install --python /tmp/typed/bin/python . mypy
+          cat > /tmp/user_code.py <<'PY'
+          from pykosis import KOSIS
+
+          # start_period takes str | None; an int is neither, so a checker that can see
+          # the shipped hints must reject it. If py.typed is missing from the wheel,
+          # mypy skips pykosis instead and emits no such error.
+          KOSIS(api_key="k").fetch_data(org_id="101", tbl_id="DT_1B42", start_period=123)
+          PY
+          /tmp/typed/bin/mypy /tmp/user_code.py > /tmp/mypy_out 2>&1 || true
+          cat /tmp/mypy_out
+          grep -q 'incompatible type' /tmp/mypy_out

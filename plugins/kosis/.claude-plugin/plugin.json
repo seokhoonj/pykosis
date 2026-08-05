@@ -1,0 +1,19 @@
+{
+  "name": "kosis",
+  "displayName": "kosis",
+  "description": "Read KOSIS (Statistics Korea) national statistics from the command line, powered by the pykosis CLI",
+  "version": "0.1.0",
+  "author": {
+    "name": "seokhoonj"
+  },
+  "homepage": "https://github.com/seokhoonj/pykosis",
+  "repository": "https://github.com/seokhoonj/pykosis",
+  "license": "MIT",
+  "keywords": [
+    "kosis",
+    "statistics korea",
+    "korea",
+    "official statistics",
+    "census"
+  ]
+}
