@@ -66,12 +66,16 @@ data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 life_table = pivot_items(data, label="itm_nm")
 ```
 
-Every result is a `list[dict]`, so it becomes a DataFrame in one line (pandas is not required).
+Every result is a `list[dict]`, so it becomes a DataFrame directly (pandas is not required).
 
 ```python
+# pandas
 import pandas as pd
+pd.DataFrame(life_table)
 
-pd.DataFrame(life_table)   # or polars.DataFrame(life_table)
+# polars
+import polars as pl
+pl.DataFrame(life_table)
 ```
 
 ## 3. Usage

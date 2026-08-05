@@ -63,12 +63,16 @@ data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 life_table = pivot_items(data, label="itm_nm")
 ```
 
-반환은 `dict`의 목록이라, 표(DataFrame)로 한 줄에 바꿉니다(pandas는 필수가 아닙니다).
+반환은 `dict`의 목록이라, 표(DataFrame)로 바로 만듭니다(pandas는 필수가 아닙니다).
 
 ```python
+# pandas
 import pandas as pd
+pd.DataFrame(life_table)
 
-pd.DataFrame(life_table)   # 또는 polars.DataFrame(life_table)
+# polars
+import polars as pl
+pl.DataFrame(life_table)
 ```
 
 ## 3. 사용법
