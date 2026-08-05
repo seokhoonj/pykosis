@@ -1,6 +1,6 @@
 ---
 name: data
-description: "Fetch a KOSIS statistical table as a time series, optionally pivoting items to columns. Holds no logic of its own -- it calls the pykosis package's CLI (`kosis data`) and shows the result to the user. Needs an organization code and a table code (find them with the find skill). Trigger phrases: KOSIS 데이터 가져와, 통계표 데이터, 국가통계 시계열, KOSIS statistic time series, fetch KOSIS table data, life table data, 인구 통계 가져와."
+description: "Fetch a KOSIS statistical table as a time series, optionally pivoting items to columns. Holds no logic of its own -- it calls the pykosis package's CLI (`kosis data`) and shows the result to the user. Needs an organization code and a table code (find them with the search or list skill). Trigger phrases: KOSIS 데이터 가져와, 통계표 데이터, 국가통계 시계열, KOSIS statistic time series, fetch KOSIS table data, life table data, 인구 통계 가져와."
 ---
 
 # kosis -- statistical table data
@@ -32,7 +32,7 @@ kosis data <ORG_ID> <TBL_ID> [--frequency ...] [--start ...] [--end ...] [--rece
 ```
 
 Options (`kosis data --help` is the source of truth):
-- `--frequency annual|half|quarterly|monthly|daily|multiyear|irregular` -- how often (default: annual).
+- `--frequency annual|half_yearly|quarterly|monthly|daily|multiyear|irregular` -- how often (default: annual).
 - `--start` / `--end` -- period-formatted bounds: `2024` (annual), `202401` (monthly),
   `2024Q1` (quarterly), `20240115` (daily). Omit both to take the most recent `--recent` periods.
 - `--obj-l1` .. `--obj-l8` -- classification levels; `--obj-l1` defaults to `ALL`. If the

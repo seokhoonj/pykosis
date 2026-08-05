@@ -7,7 +7,14 @@
 
 **한국어** | [English](README.en.md)
 
-통계청 국가통계포털 **KOSIS**의 국가통계를 읽어옵니다. KOSIS Open API의 6개 서비스를 그대로 감쌌습니다.
+통계청 국가통계포털 **KOSIS**의 국가통계를 읽어옵니다.
+
+KOSIS는 인구·경제·물가·고용·주거·보건·교육·산업 등 거의 모든 분야의 승인통계를 제공합니다.
+pykosis는 KOSIS Open API의 6개 서비스를 감싸, 통계표를 검색하고 통계자료를 가져와 항목을 열로
+펼쳐 분석에 씁니다.
+
+자주 쓰는 **KOSIS 100대 지표**는 통계표 코드 없이 `kosis.population.total_fertility_rate`처럼
+이름으로도 바로 꺼냅니다(아래 절 참고).
 
 ## 설치
 
@@ -62,8 +69,9 @@ hits = kosis.search("생명")   # '생명'이 든 표가 순위대로 여러 개
 data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 ```
 
-키워드를 좁히면(`kosis.search("완전생명표")`) 원하는 표가 상위에 바로 뜹니다. 코드를 모르고
-분류부터 훑고 싶으면 `fetch_list`로 트리를 내려갑니다.
+검색 결과의 각 행에는 분류 경로(`full_path_id`, 예: `"F > F_29"`)도 담겨 있어 분류를 구분할 수
+있습니다. 키워드를 좁히면(`kosis.search("완전생명표")`) 원하는 표가 상위에 바로 뜹니다. 코드를
+모르고 분류부터 훑고 싶으면 `fetch_list`로 트리를 내려갑니다.
 
 ```python
 kosis.fetch_list(view_code="MT_ZTITLE")                         # 최상위 분류
@@ -123,7 +131,7 @@ pivot_items(data, label="itm_id")     # 항목코드로
 
 - `fetch_explanation`은 통계조사 설명(목적·법적근거·주기·용어)을 줍니다.
 - `fetch_meta`는 통계표 정보를 줍니다. `meta_type`으로 골라 봅니다 — `TBL`(표명)·`ORG`(기관)·
-  `PRD`(수록기간)·`ITM`(항목·분류)·`CMMT`(주석).
+  `PRD`(수록기간)·`ITM`(항목·분류)·`CMMT`(주석). 코드(`"ITM"`)도 짧은 이름(`"item"`)도 됩니다.
 
 ```python
 kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")
@@ -252,7 +260,7 @@ kosis
 │   ├── industrial_accident_victims               # 산업재해자수
 │   ├── child_abuse_cases                         # 아동학대건수
 │   └── earthquake_frequency                      # 지진발생빈도
-└── industry/  # 산업·농림
+└── industry/  # 산업·농림·수산
     ├── rice_consumption_per_capita               # 1인당쌀소비량
     ├── cultivated_area                           # 경지면적
     ├── return_to_farming_population              # 귀농인구
@@ -390,9 +398,9 @@ kosis indicator 160                           # 주요지표 설명
 
 ## AI 코딩 에이전트에서 사용
 
-이 저장소는 Claude Code·Codex용 플러그인 마켓플레이스도 겸합니다 — CLI 명령과 1:1로 맞춘
-`search`·`list`·`data`·`meta`·`explanation` 스킬을 제공합니다. 먼저 패키지를 설치하고 API
-키를 설정하세요.
+이 저장소는 Claude Code·Codex용 플러그인 마켓플레이스도 겸합니다 —
+`search`·`list`·`data`·`meta`·`explanation` 스킬을 제공합니다(각각 같은 이름의 `kosis` 명령에
+대응하며, `indicator` 명령은 스킬이 없습니다). 먼저 패키지를 설치하고 API 키를 설정하세요.
 
 **Claude Code**
 
@@ -411,8 +419,8 @@ codex plugin marketplace add seokhoonj/pykosis
 codex plugin add kosis@pykosis
 ```
 
-플러그인으로 설치하지 않고 쓰려면, 스킬을 스킬 디렉터리에 symlink한 뒤 접두사(`kosis:`) 없이
-`/data`처럼 부르면 됩니다.
+**Claude Code**에서 플러그인 없이 쓰려면, 스킬을 Claude 스킬 디렉터리에 symlink한 뒤
+접두사(`kosis:`) 없이 `/data`처럼 부르면 됩니다.
 
 ```sh
 ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
@@ -444,7 +452,7 @@ ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
 
 모두 `KOSISError`의 하위입니다. 자료가 없을 뿐이면 오류가 아니라 빈 목록으로 옵니다. 분당 200회
 제한이라, 여러 표를 잇달아 읽을 때는 `KOSIS(delay_seconds=0.3)`으로 간격을, `KOSIS(cache_ttl=600)`
-으로 같은 질의를 캐시할 수 있습니다.
+으로 같은 질의를 캐시할 수 있습니다. TTL 전에 새로 받아야 하면 `kosis.clear_cache()`로 비웁니다.
 
 ## 라이선스
 

@@ -36,7 +36,7 @@ from pykosis import KOSIS, pivot_items
 kosis = KOSIS()
 
 # find a table code (org_id, tbl_id) in the catalog
-kosis.fetch_list(view_code="MT_ZTITLE")
+kosis.fetch_list(view_code="MT_ZTITLE")                         # "MT_ZTITLE" or "subject" both work
 kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F_29")  # the life-table tables
 
 # fetch a table (the complete life table)
@@ -44,8 +44,10 @@ data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 life_table = pivot_items(data, label="itm_nm")
 ```
 
-Every result is a `list[dict]`, so `pandas.DataFrame(life_table)` or
-`polars.DataFrame(life_table)` turns it into a table in one line.
+`view_code` accepts either the KOSIS code (`"MT_ZTITLE"`) or the short name (`"subject"`) --
+the twelve views are listed in Usage 1 below. Every result is a `list[dict]`, so
+`pandas.DataFrame(life_table)` or `polars.DataFrame(life_table)` turns it into a table in one
+line.
 
 ## Usage
 
@@ -55,7 +57,7 @@ KOSIS identifies a statistic by an organization (`org_id`) and a table (`tbl_id`
 not know the codes, find them with `search` (keyword) or by browsing the tree with
 `fetch_list`.
 
-`search` returns **every table** whose name matches, ranked -- the top hit is not
+`search` returns a **page of matching tables**, ranked (20 by default) -- the top hit is not
 necessarily the one you want. Read each `tbl_nm`, pick the `org_id` / `tbl_id` you need, and
 pass it to `fetch_data`.
 
@@ -135,16 +137,16 @@ pivot_items(data)                     # itm_nm (default)
 pivot_items(data, label="itm_id")     # by item code
 ```
 
-### 4. `fetch_meta` · `fetch_explanation` -- metadata and documentation
+### 4. `fetch_explanation` · `fetch_meta` -- documentation and metadata
 
+- `fetch_explanation` returns the survey documentation (purpose, legal basis, cycle, terms).
 - `fetch_meta` returns a table's structural metadata. Pick a slice with `meta_type` --
   `TBL` (name), `ORG` (organization), `PRD` (periods), `ITM` (items and classifications),
-  `CMMT` (annotations).
-- `fetch_explanation` returns the survey documentation (purpose, legal basis, cycle, terms).
+  `CMMT` (annotations). Either the code (`"ITM"`) or the friendly name (`"item"`) works.
 
 ```python
-kosis.fetch_meta(org_id="101", tbl_id="DT_1B42", meta_type="ITM")
 kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")
+kosis.fetch_meta(org_id="101", tbl_id="DT_1B42", meta_type="ITM")
 ```
 
 ### 5. `fetch_indicator` -- key-indicator documentation
@@ -409,8 +411,9 @@ kosis indicator 160                           # key-indicator documentation
 ## Use from AI coding agents
 
 This repo doubles as a plugin marketplace for Claude Code and Codex -- it provides
-`search`, `list`, `data`, `meta`, and `explanation` skills, each matching a `kosis` command
-one-to-one. Install the package and set an API key first.
+`search`, `list`, `data`, `meta`, and `explanation` skills, each named after the matching
+`kosis` command (the `indicator` command has no skill). Install the package and set an API
+key first.
 
 **Claude Code**
 
@@ -429,8 +432,8 @@ codex plugin marketplace add seokhoonj/pykosis
 codex plugin add kosis@pykosis
 ```
 
-To use the skills without installing the plugin, symlink one into your skills directory and
-call it without the `kosis:` prefix (e.g. `/data`).
+To use a skill in **Claude Code** without installing the plugin, symlink it into Claude's
+skills directory and call it without the `kosis:` prefix (e.g. `/data`).
 
 ```sh
 ln -s "$PWD/plugins/kosis/skills/data" ~/.claude/skills/data
@@ -462,7 +465,8 @@ The value `fetch_data(frequency=)` accepts. Either the word or the code works.
 
 All subclass `KOSISError`. A query that simply has no data returns an empty list, not an
 error. KOSIS caps calls at 200/min, so when reading many tables in a row, space them with
-`KOSIS(delay_seconds=0.3)` and cache repeated queries with `KOSIS(cache_ttl=600)`.
+`KOSIS(delay_seconds=0.3)` and cache repeated queries with `KOSIS(cache_ttl=600)`; call
+`kosis.clear_cache()` to force fresh results before the TTL expires.
 
 ## License
 
