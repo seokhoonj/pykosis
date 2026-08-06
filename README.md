@@ -463,7 +463,7 @@ kosis indicator 160                           # 주요지표 설명
   대응합니다.
 - 먼저 패키지를 설치하고 API 키를 설정하세요.
 
-**Claude Code**
+### 6.1 Claude Code
 
 ```
 /plugin marketplace add seokhoonj/pykosis
@@ -473,12 +473,14 @@ kosis indicator 160                           # 주요지표 설명
 설치 후 평범하게 물어보거나("생명표 통계표 코드 찾아줘", "그 표 데이터 가져와"), 스킬을 직접
 부르세요 — `/kosis:search 생명표`, `/kosis:data 101 DT_1B42`.
 
-**Codex**
+### 6.2 Codex
 
 ```
 codex plugin marketplace add seokhoonj/pykosis
 codex plugin add kosis@pykosis
 ```
+
+### 6.3 플러그인 없이 (symlink)
 
 플러그인으로 설치하지 않고 쓰려면, 스킬을 각 에이전트의 스킬 디렉터리에 symlink합니다.
 

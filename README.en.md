@@ -475,7 +475,7 @@ kosis indicator 160                           # key-indicator documentation
   the matching `kosis` command.
 - Install the package and set an API key first.
 
-**Claude Code**
+### 6.1 Claude Code
 
 ```
 /plugin marketplace add seokhoonj/pykosis
@@ -485,12 +485,14 @@ kosis indicator 160                           # key-indicator documentation
 Then just ask ("find the KOSIS code for the life table", "fetch that table"), or call a
 skill directly -- `/kosis:search 생명표`, `/kosis:data 101 DT_1B42`.
 
-**Codex**
+### 6.2 Codex
 
 ```
 codex plugin marketplace add seokhoonj/pykosis
 codex plugin add kosis@pykosis
 ```
+
+### 6.3 Without the plugin (symlink)
 
 To use a skill without installing the plugin, symlink it into the agent's skills directory.
 
