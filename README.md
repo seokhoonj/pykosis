@@ -465,6 +465,8 @@ kosis indicator 160                           # 주요지표 설명
 
 ### 6.1 Claude Code
 
+Claude Code 채팅창에서 마켓플레이스를 추가하고 설치합니다:
+
 ```
 /plugin marketplace add seokhoonj/pykosis
 /plugin install kosis@pykosis
@@ -474,6 +476,8 @@ kosis indicator 160                           # 주요지표 설명
 부르세요 — `/kosis:search 생명표`, `/kosis:data 101 DT_1B42`.
 
 ### 6.2 Codex
+
+터미널에서 마켓플레이스를 추가하고 설치합니다:
 
 ```
 codex plugin marketplace add seokhoonj/pykosis

@@ -477,6 +477,8 @@ kosis indicator 160                           # key-indicator documentation
 
 ### 6.1 Claude Code
 
+In the Claude Code chat, add the marketplace and install:
+
 ```
 /plugin marketplace add seokhoonj/pykosis
 /plugin install kosis@pykosis
@@ -486,6 +488,8 @@ Then just ask ("find the KOSIS code for the life table", "fetch that table"), or
 skill directly -- `/kosis:search 생명표`, `/kosis:data 101 DT_1B42`.
 
 ### 6.2 Codex
+
+In your terminal, add the marketplace and install:
 
 ```
 codex plugin marketplace add seokhoonj/pykosis
