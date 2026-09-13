@@ -59,5 +59,6 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 "src/pykosis/curation/_generated.py" = ["E501"]
 
 [tool.mypy]
+files = ["src"]
 python_version = "3.11"
 strict = true
