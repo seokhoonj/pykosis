@@ -545,6 +545,20 @@ def test_other_4xx_is_network_error():
         kosis.fetch_list()
 
 
+def test_deeply_nested_body_raises_response_error_not_recursion_error():
+    # json.loads (which .json() calls) raises a raw RecursionError on a body nested past
+    # the interpreter limit; a hostile payload must surface through the KOSISError
+    # hierarchy, not crash the caller with a stdlib RecursionError.
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(200, content=b"[" * 100_000)
+    )
+    kosis = KOSIS("TESTKEY", transport=transport)
+    with pytest.raises(KOSISResponseError) as info:
+        kosis.fetch_list()
+    assert info.value.code == "UNKNOWN"
+    assert info.value.__context__ is None
+
+
 def test_non_json_success_raises_response_error():
     transport = httpx.MockTransport(
         lambda request: httpx.Response(200, text="<html>maintenance</html>")

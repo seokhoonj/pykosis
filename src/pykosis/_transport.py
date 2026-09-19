@@ -114,12 +114,15 @@ class _Transport:
                 # Report the failure kind only -- str(err)/the cause carry the URL.
                 failure = KOSISNetworkError(f"request failed ({type(err).__name__})")
                 retry = True
-            except (json.JSONDecodeError, UnicodeDecodeError) as err:
-                # A 200 whose body is not JSON or not decodable (a proxy/maintenance
-                # page, or invalid-UTF-8 bytes) must surface through the KOSISError
-                # hierarchy, not a raw decode error. A proxy page can echo the requested
-                # URL, so redact the key and do not chain the decode error (its bytes
-                # are the body, which can echo it).
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as err:
+                # A 200 whose body is not JSON, not decodable, or nested too deep (a
+                # proxy/maintenance page, invalid-UTF-8 bytes, or a hostile payload)
+                # must surface through the KOSISError hierarchy, not a raw error.
+                # json.loads (which .json() calls) raises UnicodeDecodeError on a
+                # non-UTF-8 body and RecursionError on a deeply nested one -- neither a
+                # JSONDecodeError. A proxy page can echo the requested URL, so redact
+                # the key and do not chain the error (its bytes are the body, which can
+                # echo it).
                 failure = KOSISResponseError(
                     "UNKNOWN",
                     f"non-JSON response from KOSIS: {_redact_key(str(err), api_key)}",
