@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-
 import httpx
 import pytest
 
@@ -13,12 +11,108 @@ from pykosis import (
     IndicatorSection,
     KOSISAuthError,
     KOSISConfigError,
+    KOSISError,
     KOSISNetworkError,
     KOSISRateLimitError,
     KOSISResponseError,
     MetaType,
     ViewCode,
 )
+
+# A key with reserved characters, so its raw and url-encoded forms differ and a
+# redaction that misses one is caught.
+_LEAK_KEY = "raw+key/with==specials"
+
+
+def _assert_key_absent_from_chain(error: BaseException) -> None:
+    from urllib.parse import quote_plus
+
+    forms = [_LEAK_KEY, quote_plus(_LEAK_KEY)]
+    seen: set[int] = set()
+    pending: list[BaseException | None] = [error]
+    while pending:
+        current = pending.pop()
+        if current is None or id(current) in seen:
+            continue
+        seen.add(id(current))
+        blob = str(current) + repr(current) + repr(current.args)
+        for form in forms:
+            assert form not in blob
+        pending.extend([current.__cause__, current.__context__])
+
+
+@pytest.mark.parametrize("status", [404, 500, 429])
+def test_http_status_error_never_leaks_the_key(monkeypatch, status):
+    # KOSIS carries the key as an `apiKey=` query parameter, and httpx's HTTPStatusError
+    # message is built from response.url, so a naive str(err) would embed the whole key.
+    # The message must be status-only and the key-bearing httpx error must not ride the
+    # chain -- no form of the key in str/repr/args/__cause__/__context__. The
+    # reason phrase is server-authored (a MITM could reflect the URL into it), redacted.
+    from urllib.parse import quote_plus
+
+    import pykosis._transport as transport
+
+    monkeypatch.setattr(transport, "_RETRY_BACKOFF_SECONDS", 0)  # no real waiting
+    reason = f"why apiKey={quote_plus(_LEAK_KEY)}".encode()
+    kosis = KOSIS(
+        _LEAK_KEY,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                status, extensions={"reason_phrase": reason}, request=request
+            )
+        ),
+    )
+    with pytest.raises(KOSISError) as caught:
+        kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F")
+
+    _assert_key_absent_from_chain(caught.value)
+
+
+def test_undecodable_body_echoing_the_url_never_leaks_the_key():
+    # A 200 whose bytes are not valid UTF-8 raises UnicodeDecodeError in .json();
+    # if those bytes also echo the key-bearing URL, the error must still carry no key.
+    from urllib.parse import quote_plus
+
+    url = f"https://kosis.kr/openapi/statisticsList.do?apiKey={quote_plus(_LEAK_KEY)}"
+    body = b"\xff\xfe " + url.encode()
+    kosis = KOSIS(
+        _LEAK_KEY,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200, content=body, headers={"content-type": "application/json"}
+            )
+        ),
+    )
+    with pytest.raises(KOSISError) as caught:
+        kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F")
+    _assert_key_absent_from_chain(caught.value)
+
+
+def test_response_body_echoing_the_url_never_leaks_the_key():
+    # A misbehaving proxy can answer 200 with a JSON body that echoes the requested URL
+    # (which carries the key). Whether that body reads as an "unexpected" shape or a
+    # vendor {err, errMsg} error, its text must be redacted before it reaches an error.
+    from urllib.parse import quote_plus
+
+    url = f"https://kosis.kr/openapi/statisticsList.do?apiKey={quote_plus(_LEAK_KEY)}"
+    for body in (
+        [{"row": 1}, "not-a-dict-echoing " + url],  # unexpected list shape
+        {"err": "20", "errMsg": f"bad request {url}"},  # vendor errMsg echo
+        {"err": f"E {url}", "errMsg": "x"},  # vendor err (code) echo
+        {
+            "err": "11",
+            "errMsg": f"invalid key for {url}",
+        },  # auth rejection (KOSISAuthError)
+    ):
+        kosis = KOSIS(
+            _LEAK_KEY,
+            transport=httpx.MockTransport(
+                lambda request, b=body: httpx.Response(200, json=b)
+            ),
+        )
+        with pytest.raises(KOSISError) as caught:
+            kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F")
+        _assert_key_absent_from_chain(caught.value)
 
 
 def _handler(responses: list, recorded: list[httpx.Request]):
@@ -62,12 +156,31 @@ def test_repr_never_shows_key():
 
 def test_fetch_list_maps_rows_and_builds_request():
     recorded: list[httpx.Request] = []
-    kosis = _client([[{"VW_CD": "MT_ZTITLE", "LIST_ID": "F", "ORG_ID": "101",
-                       "TBL_ID": "DT_1B42", "TBL_NM": "생명표"}]], recorded)
+    kosis = _client(
+        [
+            [
+                {
+                    "VW_CD": "MT_ZTITLE",
+                    "LIST_ID": "F",
+                    "ORG_ID": "101",
+                    "TBL_ID": "DT_1B42",
+                    "TBL_NM": "생명표",
+                }
+            ]
+        ],
+        recorded,
+    )
     rows = kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F")
 
-    assert rows == [{"vw_cd": "MT_ZTITLE", "list_id": "F", "org_id": "101",
-                     "tbl_id": "DT_1B42", "tbl_nm": "생명표"}]
+    assert rows == [
+        {
+            "vw_cd": "MT_ZTITLE",
+            "list_id": "F",
+            "org_id": "101",
+            "tbl_id": "DT_1B42",
+            "tbl_nm": "생명표",
+        }
+    ]
     url = recorded[0].url
     assert url.path == "/openapi/statisticsList.do"
     assert url.params["method"] == "getList"
@@ -82,10 +195,10 @@ def test_fetch_list_maps_rows_and_builds_request():
 
 def test_search_builds_paging_and_sort():
     recorded: list[httpx.Request] = []
-    kosis = _client([[{"ORG_ID": "101", "TBL_ID": "DT_1B42", "TBL_NM": "생명표"}]],
-                    recorded)
-    rows = kosis.search("생명표", page=2, page_size=10, sort="DATE",
-                        org_id="101")
+    kosis = _client(
+        [[{"ORG_ID": "101", "TBL_ID": "DT_1B42", "TBL_NM": "생명표"}]], recorded
+    )
+    rows = kosis.search("생명표", page=2, page_size=10, sort="DATE", org_id="101")
 
     assert rows[0]["tbl_id"] == "DT_1B42"
     url = recorded[0].url
@@ -101,9 +214,16 @@ def test_search_builds_paging_and_sort():
 
 
 def _data_row(**overrides):
-    row = {"ORG_ID": "101", "TBL_ID": "DT_1B42", "TBL_NM": "생명표",
-           "PRD_SE": "Y", "PRD_DE": "2020", "ITM_NM": "기대수명",
-           "UNIT_NM": "년", "DT": "83.5"}
+    row = {
+        "ORG_ID": "101",
+        "TBL_ID": "DT_1B42",
+        "TBL_NM": "생명표",
+        "PRD_SE": "Y",
+        "PRD_DE": "2020",
+        "ITM_NM": "기대수명",
+        "UNIT_NM": "년",
+        "DT": "83.5",
+    }
     row.update(overrides)
     return row
 
@@ -130,7 +250,8 @@ def test_fetch_data_period_window_uses_start_end():
     recorded: list[httpx.Request] = []
     kosis = _client([[_data_row()]], recorded)
     kosis.fetch_data(
-        org_id="101", tbl_id="DT_1B42", frequency="M", start_period="202001")
+        org_id="101", tbl_id="DT_1B42", frequency="M", start_period="202001"
+    )
     url = recorded[0].url
     assert url.params["prdSe"] == "M"
     assert url.params["startPrdDe"] == "202001"
@@ -162,7 +283,8 @@ def test_fetch_data_blank_value_becomes_none():
 
 def test_fetch_data_error_object_raises_response_error():
     kosis = _client(
-        [{"err": "20", "errMsg": "필수요청변수값이 누락되었습니다. (objL)"}])
+        [{"err": "20", "errMsg": "필수요청변수값이 누락되었습니다. (objL)"}]
+    )
     with pytest.raises(KOSISResponseError) as info:
         kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
     assert info.value.code == "20"
@@ -185,9 +307,9 @@ def test_non_auth_vendor_error_stays_response_error():
 @pytest.mark.parametrize(
     ("code", "message"),
     [
-        ("21", "해당하는 통계표가 존재하지 않습니다."),   # no such table (live)
+        ("21", "해당하는 통계표가 존재하지 않습니다."),  # no such table (live)
         ("31", "셀 최대 개수(40,000)를 초과하였습니다."),  # cell-count cap (live)
-        ("99", "알 수 없는 오류가 발생하였습니다."),       # any other vendor code
+        ("99", "알 수 없는 오류가 발생하였습니다."),  # any other vendor code
     ],
 )
 def test_other_vendor_codes_preserved_on_response_error(code, message):
@@ -231,8 +353,8 @@ def test_fetch_explanation_requires_stat_id_or_org_and_tbl():
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"org_id": "101"},                                  # half a table pair
-        {"tbl_id": "DT_1B42"},                              # the other half
+        {"org_id": "101"},  # half a table pair
+        {"tbl_id": "DT_1B42"},  # the other half
         {"stat_id": "S1", "org_id": "101", "tbl_id": "T"},  # both forms at once
     ],
 )
@@ -245,7 +367,8 @@ def test_fetch_explanation_rejects_ambiguous_identifiers(kwargs):
 def test_fetch_explanation_maps_camelcase_keys():
     recorded: list[httpx.Request] = []
     kosis = _client(
-        [[{"statsNm": "생명표", "writingPurps": "기대수명 산출"}]], recorded)
+        [[{"statsNm": "생명표", "writingPurps": "기대수명 산출"}]], recorded
+    )
     rows = kosis.fetch_explanation(org_id="101", tbl_id="DT_1B42")
     assert rows[0]["stats_nm"] == "생명표"
     assert rows[0]["writing_purps"] == "기대수명 산출"
@@ -280,9 +403,19 @@ def test_meta_type_accepts_alias_code_and_enum():
 def test_fetch_indicator_builds_request_and_maps_keys():
     recorded: list[httpx.Request] = []
     kosis = _client(
-        [[{"jipyoId": "160", "jipyoNm": "합계출산율", "jipyoExplan1": "개념",
-           "jipyoExplan2": "산정방법", "jipyoExplan3": "출처"}]],
-        recorded)
+        [
+            [
+                {
+                    "jipyoId": "160",
+                    "jipyoNm": "합계출산율",
+                    "jipyoExplan1": "개념",
+                    "jipyoExplan2": "산정방법",
+                    "jipyoExplan3": "출처",
+                }
+            ]
+        ],
+        recorded,
+    )
     rows = kosis.fetch_indicator("160", page=2, page_size=5)
 
     assert rows[0]["jipyo_id"] == "160"
@@ -310,8 +443,8 @@ def test_fetch_indicator_section_selects_detail_code():
 def test_enum_arg_accepts_friendly_name():
     recorded: list[httpx.Request] = []
     kosis = _client([[], [], []], recorded)
-    kosis.fetch_list(view_code="subject")               # member name
-    kosis.search("x", sort="date")                       # member name
+    kosis.fetch_list(view_code="subject")  # member name
+    kosis.search("x", sort="date")  # member name
     kosis.fetch_data(org_id="1", tbl_id="T", frequency="annual")
     assert recorded[0].url.params["vwCd"] == "MT_ZTITLE"
     assert recorded[1].url.params["sort"] == "DATE"
@@ -345,8 +478,11 @@ def test_enum_arg_rejects_unknown_with_valueerror():
 
 def test_cache_serves_repeat_without_second_request():
     recorded: list[httpx.Request] = []
-    kosis = KOSIS("TESTKEY", cache_ttl=60,
-                  transport=_handler([[_data_row()], [_data_row()]], recorded))
+    kosis = KOSIS(
+        "TESTKEY",
+        cache_ttl=60,
+        transport=_handler([[_data_row()], [_data_row()]], recorded),
+    )
     kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
     kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
     assert len(recorded) == 1  # second call served from cache
@@ -354,9 +490,11 @@ def test_cache_serves_repeat_without_second_request():
 
 def test_cache_misses_on_a_different_query():
     recorded: list[httpx.Request] = []
-    kosis = KOSIS("TESTKEY", cache_ttl=60,
-                  transport=_handler([[_data_row(DT="1.0")], [_data_row(DT="2.0")]],
-                                     recorded))
+    kosis = KOSIS(
+        "TESTKEY",
+        cache_ttl=60,
+        transport=_handler([[_data_row(DT="1.0")], [_data_row(DT="2.0")]], recorded),
+    )
     first = kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
     second = kosis.fetch_data(org_id="101", tbl_id="DT_1B41")  # a different table
     assert len(recorded) == 2  # the second query must not hit the first's cache entry
@@ -366,8 +504,11 @@ def test_cache_misses_on_a_different_query():
 
 def test_clear_cache_forces_refetch():
     recorded: list[httpx.Request] = []
-    kosis = KOSIS("TESTKEY", cache_ttl=60,
-                  transport=_handler([[_data_row()], [_data_row(DT="84.0")]], recorded))
+    kosis = KOSIS(
+        "TESTKEY",
+        cache_ttl=60,
+        transport=_handler([[_data_row()], [_data_row(DT="84.0")]], recorded),
+    )
     kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
     kosis.clear_cache()
     rows = kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
@@ -376,8 +517,7 @@ def test_clear_cache_forces_refetch():
 
 
 def test_cached_rows_isolated_from_caller_mutation():
-    kosis = KOSIS("TESTKEY", cache_ttl=60,
-                  transport=_handler([[_data_row()]], []))
+    kosis = KOSIS("TESTKEY", cache_ttl=60, transport=_handler([[_data_row()]], []))
     first = kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
     first[0]["data_value"] = 0.0  # caller mutates its copy
     second = kosis.fetch_data(org_id="101", tbl_id="DT_1B42")
@@ -399,19 +539,25 @@ def test_http_429_is_rate_limit_not_retried():
 
 def test_other_4xx_is_network_error():
     kosis = KOSIS(
-        "TESTKEY", transport=httpx.MockTransport(lambda r: httpx.Response(404)))
+        "TESTKEY", transport=httpx.MockTransport(lambda r: httpx.Response(404))
+    )
     with pytest.raises(KOSISNetworkError):
         kosis.fetch_list()
 
 
 def test_non_json_success_raises_response_error():
     transport = httpx.MockTransport(
-        lambda request: httpx.Response(200, text="<html>maintenance</html>"))
+        lambda request: httpx.Response(200, text="<html>maintenance</html>")
+    )
     kosis = KOSIS("TESTKEY", transport=transport)
     with pytest.raises(KOSISResponseError) as info:
         kosis.fetch_list()
     assert info.value.code == "UNKNOWN"
-    assert isinstance(info.value.__cause__, json.JSONDecodeError)
+    # The JSONDecodeError is NOT chained: its `.doc` is the response body, which a proxy
+    # could make echo the key-bearing request URL, so keeping it in the chain would
+    # expose the key to a structured logger.
+    assert info.value.__cause__ is None
+    assert info.value.__context__ is None
 
 
 def test_context_manager_closes():
@@ -443,13 +589,14 @@ def _rendered(exc: BaseException) -> str:
     import traceback
 
     return str(exc) + "".join(
-        traceback.format_exception(type(exc), exc, exc.__traceback__))
+        traceback.format_exception(type(exc), exc, exc.__traceback__)
+    )
 
 
 def test_api_key_never_reaches_an_error_message(monkeypatch):
     # The key rides in the request URL (apiKey=...). No error path -- rate limit,
     # other 4xx, 5xx after retries, or a transport failure -- may surface it in the
-    # exception message or a printed traceback. (Package constitution Ch 12.)
+    # exception message or a printed traceback.
     monkeypatch.setattr("pykosis._transport.time.sleep", lambda _seconds: None)
 
     def _connect_error(request: httpx.Request) -> httpx.Response:

@@ -20,12 +20,13 @@ from __future__ import annotations
 import json
 import time
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote_plus, urlencode
 
 import httpx
 
 from .exceptions import (
     KOSISAuthError,
+    KOSISError,
     KOSISNetworkError,
     KOSISRateLimitError,
     KOSISResponseError,
@@ -81,42 +82,57 @@ class _Transport:
         other vendor error (the ``{"err", "errMsg"}`` object form). A query that simply
         matches no data returns an empty list.
         """
+        api_key = params.get("apiKey", "")
         url = f"{base_url}?{urlencode(params)}"
-        last_error: KOSISNetworkError | None = None
+        last_error: KOSISError | None = None
         for attempt in range(self._max_attempts):
             self._wait_for_next_slot()
+            # The URL carries ``apiKey=<key>``. Every failure error is BUILT inside the
+            # except block but RAISED after it (`from None`), so the key-bearing httpx
+            # error -- whose str()/repr() re-emit the URL and whose `.request` has it,
+            # is never attached as __context__ or __cause__ (secret-safety invariant).
+            failure: KOSISError | None = None
+            retry = False
             try:
                 response = self._client.get(url)
                 response.raise_for_status()
                 payload = response.json()
             except httpx.HTTPStatusError as err:
-                # Message from the status line ONLY. ``str(err)`` -- and the httpx
-                # exception chained as a cause -- embed the request URL, which carries
-                # ``apiKey=<key>``. Never surface either; ``from None`` also keeps that
-                # URL out of a printed traceback.
+                # Message from the status line ONLY -- str(err) has the key URL. The
+                # reason phrase is server/MITM-authored, so redact it like every other
+                # server field, in case it reflects the request URL.
                 status = err.response.status_code
-                detail = f"HTTP {status} {err.response.reason_phrase}".rstrip()
+                reason = _redact_key(err.response.reason_phrase, api_key)
+                detail = f"HTTP {status} {reason}".rstrip()
                 if status == 429:  # Too Many Requests -- the rate cap, not retried
-                    raise KOSISRateLimitError("429", detail) from None
-                if status < 500:  # any other 4xx is the server's answer
-                    raise KOSISNetworkError(detail) from None
-                last_error = KOSISNetworkError(detail)  # 5xx: retry
+                    failure = KOSISRateLimitError("429", detail)
+                elif status < 500:  # any other 4xx is the server's answer
+                    failure = KOSISNetworkError(detail)
+                else:  # 5xx: retry
+                    failure, retry = KOSISNetworkError(detail), True
             except httpx.HTTPError as err:  # timeout, connection reset, ...
-                # Report the failure kind, not ``str(err)``/the cause -- same reason.
-                last_error = KOSISNetworkError(f"request failed ({type(err).__name__})")
-            except json.JSONDecodeError as err:
-                # A 200 whose body is not JSON (a proxy/maintenance HTML page) must
-                # surface through the KOSISError hierarchy, not as a raw decode error.
-                # Safe to chain: a decode error is about the response body, not the
-                # key-bearing request URL.
-                raise KOSISResponseError(
-                    "UNKNOWN", f"non-JSON response from KOSIS: {err}") from err
+                # Report the failure kind only -- str(err)/the cause carry the URL.
+                failure = KOSISNetworkError(f"request failed ({type(err).__name__})")
+                retry = True
+            except (json.JSONDecodeError, UnicodeDecodeError) as err:
+                # A 200 whose body is not JSON or not decodable (a proxy/maintenance
+                # page, or invalid-UTF-8 bytes) must surface through the KOSISError
+                # hierarchy, not a raw decode error. A proxy page can echo the requested
+                # URL, so redact the key and do not chain the decode error (its bytes
+                # are the body, which can echo it).
+                failure = KOSISResponseError(
+                    "UNKNOWN",
+                    f"non-JSON response from KOSIS: {_redact_key(str(err), api_key)}",
+                )
             else:
-                return _extract_rows(payload)
+                return _extract_rows(payload, api_key)
+            if not retry:
+                raise failure from None  # raised outside the except: no __context__
+            last_error = failure
             if attempt + 1 < self._max_attempts:
                 time.sleep(_RETRY_BACKOFF_SECONDS * _RETRY_BACKOFF_FACTOR**attempt)
         if last_error is not None:
-            raise last_error
+            raise last_error from None  # raised outside the except: no __context__
         raise KOSISNetworkError("request failed")
 
     def _wait_for_next_slot(self) -> None:
@@ -128,18 +144,32 @@ class _Transport:
         self._next_request_at = time.monotonic() + self._delay_seconds
 
 
-def _extract_rows(payload: Any) -> list[dict[str, Any]]:
+def _redact_key(text: str, api_key: str) -> str:
+    """Blank the API key out of any text derived from the request URL or the response.
+
+    The key rides in the request URL as ``apiKey=<key>``, and a misbehaving proxy can
+    echo that URL in a JSON body; the key appears in its raw form and, since the URL is
+    url-encoded, in its ``quote_plus``d form. Replace both.
+    """
+    if not api_key:  # an empty key would splice <key> between every character
+        return text
+    return text.replace(api_key, "<key>").replace(quote_plus(api_key), "<key>")
+
+
+def _extract_rows(payload: Any, api_key: str) -> list[dict[str, Any]]:
     """A KOSIS payload as a list of row dicts, or raise on the vendor error object.
 
     Success is a JSON array of row objects; a vendor error is a JSON object carrying
     ``err`` / ``errMsg``. A "no matching data" error (``err`` "30") is not a failure --
     it returns an empty list. A lone object without ``err`` is treated as a single-row
-    result (some services return one record unwrapped).
+    result (some services return one record unwrapped). ``api_key`` is used only to
+    redact it from an error message, in case a proxy body echoes the request URL.
     """
     if isinstance(payload, dict):
         if "err" in payload or "errMsg" in payload:
-            code = str(payload.get("err", "UNKNOWN"))
-            message = str(payload.get("errMsg", ""))
+            # err/errMsg are server-authored and could echo the key-bearing URL.
+            code = _redact_key(str(payload.get("err", "UNKNOWN")), api_key)
+            message = _redact_key(str(payload.get("errMsg", "")), api_key)
             if code == _NO_DATA_CODE:  # no matching data -- empty result, not a failure
                 return []
             if code in _AUTH_ERR_CODES:
@@ -150,6 +180,10 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]]:
         rows = [row for row in payload if isinstance(row, dict)]
         if len(rows) != len(payload):
             raise KOSISResponseError(
-                "UNKNOWN", f"unexpected KOSIS response: {payload!r}")
+                "UNKNOWN",
+                f"unexpected KOSIS response: {_redact_key(repr(payload), api_key)}",
+            )
         return rows
-    raise KOSISResponseError("UNKNOWN", f"unexpected KOSIS response: {payload!r}")
+    raise KOSISResponseError(
+        "UNKNOWN", f"unexpected KOSIS response: {_redact_key(repr(payload), api_key)}"
+    )

@@ -53,10 +53,10 @@ jobs:
       - name: Types
         run: .venv/bin/mypy src
 
-      - name: Confirm the only runtime dependency is httpx
-        # A bare install must pull in nothing but httpx; a second runtime dependency
-        # creeping into `dependencies` is caught here rather than in a user's
-        # environment.
+      - name: Confirm the runtime dependencies are credbox and httpx
+        # A bare install must pull in nothing but credbox (the credential store) and
+        # httpx (the transport); a stray third runtime dependency creeping into
+        # `dependencies` is caught here rather than in a user's environment.
         run: |
           uv venv /tmp/bare --python ${{ matrix.python-version }}
           uv pip install --python /tmp/bare/bin/python .
@@ -66,11 +66,11 @@ jobs:
           requires = md.requires('pykosis') or []
           runtime = [r for r in requires if 'extra ==' not in r]
           # Each requirement's bare name (before any version/marker/extra), PEP 503
-          # normalized; the runtime set must be exactly httpx.
+          # normalized; the runtime set must be exactly credbox + httpx.
           names = sorted(re.split(r'[<>=!~;\[\s]', r, maxsplit=1)[0].replace('_', '-').lower() for r in runtime)
-          assert names == ['httpx'], f'unexpected runtime dependencies: {runtime}'
+          assert names == ['credbox', 'httpx'], f'unexpected runtime dependencies: {runtime}'
           import pykosis
-          print('pykosis imports with only httpx')
+          print('pykosis imports with credbox and httpx')
           "
           # The console script runs, and its top-level --version prints (not shoved
           # into a required subcommand).
