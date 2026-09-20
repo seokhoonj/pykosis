@@ -83,8 +83,10 @@ def test_undecodable_body_echoing_the_url_never_leaks_the_key():
             )
         ),
     )
-    with pytest.raises(KOSISError) as caught:
+    with pytest.raises(KOSISResponseError) as caught:
         kosis.fetch_list(view_code="MT_ZTITLE", parent_list_id="F")
+    assert caught.value.code == "UNKNOWN"     # the malformed-body sentinel
+    assert caught.value.__context__ is None    # the decode error must not chain
     _assert_key_absent_from_chain(caught.value)
 
 
@@ -591,6 +593,25 @@ def test_server_error_retries_then_raises_network_error(monkeypatch):
     with pytest.raises(KOSISNetworkError):
         kosis.fetch_list()
     assert calls["n"] == 3  # one try plus two retries
+
+
+def test_mid_read_failure_raises_network_error(monkeypatch):
+    # A failure while RECEIVING the body (httpx.ReadError, not a connect-phase error) is
+    # still an httpx.HTTPError, so it surfaces as KOSISNetworkError -- retried and
+    # detached, never a raw error -- and even a key-bearing request cannot leak.
+    monkeypatch.setattr("pykosis._transport.time.sleep", lambda _seconds: None)
+    attempts = {"n": 0}
+
+    def fail(request: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        raise httpx.ReadError("read interrupted", request=request)
+
+    kosis = KOSIS(_LEAK_KEY, transport=httpx.MockTransport(fail))
+    with pytest.raises(KOSISNetworkError) as caught:
+        kosis.fetch_list()
+    assert attempts["n"] == 3
+    assert caught.value.__context__ is None and caught.value.__cause__ is None
+    _assert_key_absent_from_chain(caught.value)
 
 
 def test_bad_cache_ttl_rejected():

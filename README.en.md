@@ -64,6 +64,8 @@ data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 
 # 3) spread items across columns
 life_table = pivot_items(data, label="itm_nm")
+
+print(life_table[:3])   # print the first three to check
 ```
 
 Every result is a `list[dict]`, so it becomes a DataFrame directly (pandas is not required).
@@ -527,7 +529,7 @@ The value `fetch_data(frequency=)` accepts. Either the word or the code works.
 |---|---|
 | `KOSISConfigError` | no API key was found |
 | `KOSISAuthError` | KOSIS rejected the key |
-| `KOSISResponseError` | KOSIS returned an error (`.code` / `.message`, e.g. `err=20`) |
+| `KOSISResponseError` | KOSIS returned an error, or the response body was not valid UTF-8 JSON (`.code` / `.message`, e.g. `err=20`; the latter case has `.code` `"UNKNOWN"`) |
 | `KOSISRateLimitError` | the call-rate limit (HTTP 429) was hit |
 | `KOSISNetworkError` | the network failed after retries |
 

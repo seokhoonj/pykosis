@@ -61,6 +61,8 @@ data = kosis.fetch_data(org_id="101", tbl_id="DT_1B42", obj_l1="ALL")
 
 # 3) 항목을 가로 열로 펼치기
 life_table = pivot_items(data, label="itm_nm")
+
+print(life_table[:3])   # 앞의 3개만 찍어 확인
 ```
 
 반환은 `dict`의 목록이라, 표(DataFrame)로 바로 만듭니다(pandas는 필수가 아닙니다).
@@ -515,7 +517,7 @@ Claude Code는 바로 인식하고, Codex는 재시작해야 로딩됩니다.
 |---|---|
 | `KOSISConfigError` | API 키를 찾지 못했을 때 |
 | `KOSISAuthError` | KOSIS가 키를 거부했을 때 |
-| `KOSISResponseError` | KOSIS가 오류를 돌려줬을 때 (`.code`·`.message`, 예: `err=20`) |
+| `KOSISResponseError` | KOSIS가 오류를 돌려주거나, 응답 본문이 올바른 UTF-8 JSON이 아닐 때 (`.code`·`.message`, 예: `err=20`; 후자는 `.code`가 `"UNKNOWN"`) |
 | `KOSISRateLimitError` | 호출 속도 제한(HTTP 429)에 걸렸을 때 |
 | `KOSISNetworkError` | 네트워크가 끝내 안 됐을 때 |
 
